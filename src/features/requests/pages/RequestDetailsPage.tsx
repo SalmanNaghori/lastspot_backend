@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, MapPin } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useToast } from '@/app/providers/ToastProvider';
 
 export function RequestDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -29,9 +30,11 @@ export function RequestDetailsPage() {
     );
   }
 
+  const { showToast } = useToast();
+
   const handleStatusUpdate = async (status: string) => {
     await adminRepo.updateRequestStatus(id as string, status);
-    alert(`Request status updated to ${status}`);
+    showToast(`Request status updated to ${status}`, 'success');
     loadDetails();
   };
 

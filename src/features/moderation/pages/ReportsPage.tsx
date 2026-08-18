@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { AppStrings } from '@/core/constants/app_strings';
+import { useToast } from '@/app/providers/ToastProvider';
 
 export function ReportsPage() {
   const [status, setStatus] = useState('all');
@@ -21,15 +22,17 @@ export function ReportsPage() {
     loadReports();
   }, [status, page]);
 
+  const { showToast } = useToast();
+
   const handleDismiss = async (id: string) => {
     await adminRepo.dismissReport(id);
-    alert(AppStrings.Reports.alerts.dismissed);
+    showToast('Report dismissed after review.', 'info');
     loadReports();
   };
 
   const handleResolve = async (id: string) => {
     await adminRepo.resolveReport(id, 'Resolved by Admin after taking appropriate action.');
-    alert(AppStrings.Reports.alerts.resolved);
+    showToast('Report marked as resolved!', 'success');
     loadReports();
   };
 

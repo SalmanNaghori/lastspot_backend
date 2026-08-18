@@ -32,6 +32,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const fetchSessionAndRole = async () => {
       try {
+        // Enforce custom Remember Me logic
+        const localSession = localStorage.getItem('activity_admin_session')
+        const activeSession = sessionStorage.getItem('activity_admin_session')
+
+        if (!localSession && !activeSession) {
+          // If no custom session exists, but Supabase has a session,
+          // it means Remember Me was false and the tab was closed.
+          const { data } = await supabase.auth.getSession()
+          if (data.session) {
+            await supabase.auth.signOut()
+          }
+          if (mounted) {
+            setSession(null)
+            setUser(null)
+            setRole(null)
+            setLoading(false)
+          }
+          return
+        }
+
         const { data: { session }, error: sessionError } = await supabase.auth.getSession()
         if (sessionError) throw sessionError
 

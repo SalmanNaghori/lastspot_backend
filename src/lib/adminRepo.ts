@@ -1,4 +1,5 @@
 import { supabase } from '@/core/supabase/client'
+import { ApiUrls } from '@/core/constants/api_urls'
 
 class ComprehensiveAdminRepository {
 
@@ -18,21 +19,23 @@ class ComprehensiveAdminRepository {
         { count: openReports },
         { count: totalDevices },
         { count: androidDevices },
-        { count: iosDevices }
+        { count: iosDevices },
+        { count: webDevices }
       ] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact', head: true }),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('status', 'active').is('deleted_at', null),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('status', 'suspended').is('deleted_at', null),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('status', 'banned').is('deleted_at', null),
-        supabase.from('profiles').select('*', { count: 'exact', head: true }).not('deleted_at', 'is', null),
-        supabase.from('requests').select('*', { count: 'exact', head: true }),
-        supabase.from('requests').select('*', { count: 'exact', head: true }).in('status', ['published', 'full']),
-        supabase.from('requests').select('*', { count: 'exact', head: true }).eq('status', 'closed'),
-        supabase.from('join_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'open'),
-        supabase.from('user_devices').select('*', { count: 'exact', head: true }),
-        supabase.from('user_devices').select('*', { count: 'exact', head: true }).ilike('platform', '%android%'),
-        supabase.from('user_devices').select('*', { count: 'exact', head: true }).ilike('platform', '%ios%')
+        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }),
+        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).eq('status', 'suspended'),
+        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).eq('status', 'banned'),
+        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).not('deleted_at', 'is', null),
+        supabase.from(ApiUrls.tables.requests).select('*', { count: 'exact', head: true }),
+        supabase.from(ApiUrls.tables.requests).select('*', { count: 'exact', head: true }).eq('status', 'open'),
+        supabase.from(ApiUrls.tables.requests).select('*', { count: 'exact', head: true }).in('status', ['completed', 'cancelled']),
+        supabase.from(ApiUrls.tables.joinRequests).select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from(ApiUrls.tables.reports).select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from(ApiUrls.tables.userDevices).select('*', { count: 'exact', head: true }),
+        supabase.from(ApiUrls.tables.userDevices).select('*', { count: 'exact', head: true }).eq('platform', 'android'),
+        supabase.from(ApiUrls.tables.userDevices).select('*', { count: 'exact', head: true }).eq('platform', 'ios'),
+        supabase.from(ApiUrls.tables.userDevices).select('*', { count: 'exact', head: true }).eq('platform', 'web')
       ]);
 
       return {
@@ -57,7 +60,8 @@ class ComprehensiveAdminRepository {
         devices: {
           total: totalDevices || 0,
           android: androidDevices || 0,
-          ios: iosDevices || 0
+          ios: iosDevices || 0,
+          web: webDevices || 0
         },
         notifications: {
           sent: 0
@@ -70,63 +74,178 @@ class ComprehensiveAdminRepository {
         requests: { total: 0, active: 0, closed: 0 },
         joinRequests: { pending: 0 },
         reports: { open: 0 },
-        devices: { total: 0, android: 0, ios: 0 },
+        devices: { total: 0, android: 0, ios: 0, web: 0 },
         notifications: { sent: 0 }
       };
     }
   }
 
-  async getRecentUsers(limit = 3) {
-    try {
-      const { data, error } = await supabase.from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(limit);
-      if (error) throw error;
-      return data || [];
-    } catch (error) {
+  async getRecentUsers(limit = 5) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id, full_name, email, avatar_url, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) {
       console.error('Error in getRecentUsers:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  async getRecentRequests(limit = 5) {
+    const { data, error } = await supabase
+      .from('requests')
+      .select(`
+        id,
+        title,
+        location_name,
+        status,
+        created_at,
+        categories (
+          name,
+          icon
+        ),
+        profiles (
+          full_name,
+          email,
+          avatar_url
+        )
+      `)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.error('Error in getRecentRequests:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  async getRecentDevices(limit = 5) {
+    const { data, error } = await supabase
+      .from('user_devices')
+      .select(`
+        id,
+        device_name,
+        platform,
+        last_active,
+        profiles (
+          full_name,
+          email
+        )
+      `)
+      .order('last_active', { ascending: false })
+      .limit(limit);
+    if (error) {
+      console.error('Error in getRecentDevices:', error);
+      return [];
+    }
+    return data || [];
+  }
+
+  // ROLES
+  async getAdminUsers() {
+    try {
+      const { data, error } = await supabase.from(ApiUrls.tables.userRoles).select(`
+        id,
+        role,
+        created_at,
+        profiles (
+          id,
+          full_name,
+          email,
+          avatar_url,
+          status
+        )
+      `).in('role', ['admin', 'moderator']);
+      if (error) throw error;
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        role: r.role,
+        assigned_at: r.created_at,
+        user: r.profiles || {}
+      }));
+    } catch (error) {
+      console.error('Error in getAdminUsers:', error);
       return [];
     }
   }
 
-  async getRecentDevices(limit = 3) {
+  async assignRole(userId: string, role: string) {
     try {
-      const { data: devices, error } = await supabase.from('user_devices')
-        .select('*')
-        .order('last_active_at', { ascending: false })
-        .limit(limit);
-        
+      const { error } = await supabase.rpc(ApiUrls.rpc.setUserRole, { user_id: userId, role });
       if (error) throw error;
-      if (!devices || devices.length === 0) return [];
-
-      const userIds = [...new Set(devices.map((d: any) => d.user_id))].filter(Boolean);
-      let profilesMap: Record<string, any> = {};
-
-      if (userIds.length > 0) {
-        const { data: profiles, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url')
-          .in('id', userIds);
-        
-        if (profileError) throw profileError;
-        
-        if (profiles) {
-          profilesMap = profiles.reduce((acc: any, p: any) => {
-            acc[p.id] = p;
-            return acc;
-          }, {});
-        }
-      }
-      
-      return devices.map((d: any) => ({
-        ...d,
-        user_name: profilesMap[d.user_id]?.full_name || 'Unknown',
-        user_avatar: profilesMap[d.user_id]?.avatar_url || ''
-      }));
     } catch (error) {
-      console.error('Error in getRecentDevices:', error);
+      console.error('Error in assignRole:', error);
+      throw error;
+    }
+  }
+
+  async revokeRole(userId: string, role: string) {
+    try {
+      const { error } = await supabase.rpc(ApiUrls.rpc.revokeUserRole, { user_id: userId, role });
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error in revokeRole:', error);
+      throw error;
+    }
+  }
+
+  async searchUsers(query: string) {
+    if (!query) return [];
+    try {
+      const { data, error } = await supabase
+        .from(ApiUrls.tables.profiles)
+        .select('id, full_name, email, avatar_url')
+        .ilike('full_name', `%${query}%`)
+        .eq('status', 'active')
+        .limit(10);
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error in searchUsers:', error);
       return [];
+    }
+  }
+
+  async createAdminUser(payload: any) {
+    try {
+      const { data, error } = await supabase.functions.invoke('create-admin-user', {
+        body: payload
+      });
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error in createAdminUser:', error);
+      throw error;
+    }
+  }
+
+  // SETTINGS
+  async getAppSettings() {
+    try {
+      const { data, error } = await supabase.from(ApiUrls.tables.appSettings).select('*');
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error in getAppSettings:', error);
+      return [];
+    }
+  }
+
+  async updateAppSetting(key: string, value: any) {
+    try {
+      const { error } = await supabase
+        .from(ApiUrls.tables.appSettings)
+        .update({ 
+          value,
+          updated_at: new Date().toISOString()
+        })
+        .eq('key', key);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error in updateAppSetting:', error);
+      throw error;
     }
   }
 
@@ -143,7 +262,7 @@ class ComprehensiveAdminRepository {
       // Email Search via RPC (fallback to full_name if not RPC)
       if (q) {
         if (q.includes('@')) {
-          const { data, error } = await supabase.rpc('search_users_by_email', { search_term: q });
+          const { data, error } = await supabase.rpc(ApiUrls.rpc.searchUsersByEmail, { search_term: q });
           if (!error && data) {
              return {
                users: data,
@@ -182,11 +301,11 @@ class ComprehensiveAdminRepository {
 
   async getUserById(id: string) {
     try {
-      const { data: user, error: userError } = await supabase.from('profiles').select('*').eq('id', id).single();
+      const { data: user, error: userError } = await supabase.from(ApiUrls.tables.profiles).select('*').eq('id', id).single();
       if (userError || !user) throw userError || new Error('User not found');
       
-      const { data: devices } = await supabase.from('user_devices').select('*').eq('user_id', id);
-      const { data: roleData } = await supabase.from('user_roles').select('role').eq('user_id', id).single();
+      const { data: devices } = await supabase.from(ApiUrls.tables.userDevices).select('*').eq('user_id', id);
+      const { data: roleData } = await supabase.from(ApiUrls.tables.userRoles).select('role').eq('user_id', id).single();
       
       return { ...user, devices: devices || [], role: roleData?.role || 'user' };
     } catch (error) {
@@ -197,7 +316,7 @@ class ComprehensiveAdminRepository {
 
   async activateUser(id: string) {
     try {
-      const { error } = await supabase.from('profiles').update({ 
+      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ 
         status: 'active', status_reason: null, status_message: null, status_expires_at: null 
       }).eq('id', id);
       if (error) throw error;
@@ -210,7 +329,7 @@ class ComprehensiveAdminRepository {
 
   async suspendUser(id: string, { reason, message, expiresAt }: any) {
     try {
-      const { error } = await supabase.from('profiles').update({ 
+      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ 
         status: 'suspended', status_reason: reason, status_message: message, status_expires_at: expiresAt || null 
       }).eq('id', id);
       if (error) throw error;
@@ -223,7 +342,7 @@ class ComprehensiveAdminRepository {
 
   async banUser(id: string, { reason, message }: any) {
     try {
-      const { error } = await supabase.from('profiles').update({ 
+      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ 
         status: 'banned', status_reason: reason, status_message: message 
       }).eq('id', id);
       if (error) throw error;
@@ -236,7 +355,7 @@ class ComprehensiveAdminRepository {
 
   async softDeleteUser(id: string) {
     try {
-      const { error } = await supabase.from('profiles').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ deleted_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
       return await this.getUserById(id);
     } catch (error) {
@@ -247,7 +366,7 @@ class ComprehensiveAdminRepository {
 
   async reactivateUser(id: string) {
     try {
-      const { error } = await supabase.from('profiles').update({ deleted_at: null }).eq('id', id);
+      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ deleted_at: null }).eq('id', id);
       if (error) throw error;
       return await this.getUserById(id);
     } catch (error) {
@@ -259,7 +378,7 @@ class ComprehensiveAdminRepository {
   // CATEGORIES
   async getCategories() {
     try {
-      const { data, error } = await supabase.from('categories').select('*').order('display_order', { ascending: true });
+      const { data, error } = await supabase.from(ApiUrls.tables.categories).select('*').order('display_order', { ascending: true });
       if (error) throw error;
       return data || [];
     } catch (error) {
@@ -271,10 +390,10 @@ class ComprehensiveAdminRepository {
   async saveCategory(cat: any) {
     try {
       if (cat.id) {
-        const { error } = await supabase.from('categories').update({ ...cat, updated_at: new Date().toISOString() }).eq('id', cat.id);
+        const { error } = await supabase.from(ApiUrls.tables.categories).update({ ...cat, updated_at: new Date().toISOString() }).eq('id', cat.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('categories').insert([{ ...cat }]);
+        const { error } = await supabase.from(ApiUrls.tables.categories).insert([{ ...cat }]);
         if (error) throw error;
       }
       return await this.getCategories();
@@ -286,11 +405,11 @@ class ComprehensiveAdminRepository {
 
   async toggleCategoryActive(id: string) {
     try {
-      const { data: cat, error: fetchError } = await supabase.from('categories').select('is_active').eq('id', id).single();
+      const { data: cat, error: fetchError } = await supabase.from(ApiUrls.tables.categories).select('is_active').eq('id', id).single();
       if (fetchError) throw fetchError;
       
       if (cat) {
-        const { error: updateError } = await supabase.from('categories').update({ is_active: !cat.is_active }).eq('id', id);
+        const { error: updateError } = await supabase.from(ApiUrls.tables.categories).update({ is_active: !cat.is_active }).eq('id', id);
         if (updateError) throw updateError;
       }
       return await this.getCategories();
@@ -302,7 +421,7 @@ class ComprehensiveAdminRepository {
 
   async deleteCategory(id: string) {
     try {
-      const { error } = await supabase.from('categories').delete().eq('id', id);
+      const { error } = await supabase.from(ApiUrls.tables.categories).delete().eq('id', id);
       if (error) throw error;
       return await this.getCategories();
     } catch (error) {
@@ -315,9 +434,26 @@ class ComprehensiveAdminRepository {
   async getRequests({ search = '', categoryId = 'all', status = 'all', page = 1, pageSize = 8 }: any) {
     try {
       let query = supabase.from('requests').select(`
-        *,
-        creator:profiles!requests_user_id_fkey(full_name, avatar_url),
-        category:categories(name)
+        id,
+        title,
+        description,
+        location_name,
+        event_date_time,
+        max_participants,
+        current_participants,
+        status,
+        created_at,
+        categories (
+          id,
+          name,
+          icon
+        ),
+        profiles:user_id (
+          id,
+          full_name,
+          email,
+          avatar_url
+        )
       `, { count: 'exact' });
 
       if (categoryId !== 'all') query = query.eq('category_id', categoryId);
@@ -330,9 +466,11 @@ class ComprehensiveAdminRepository {
 
       const formattedData = (data || []).map((r: any) => ({
         ...r,
-        creator_name: r.creator?.full_name || 'Unknown User',
-        creator_avatar: r.creator?.avatar_url || '',
-        category_name: r.category?.name || 'General'
+        location: r.location_name,
+        required_people: r.max_participants,
+        creator_name: r.profiles?.full_name || 'Unknown User',
+        creator_avatar: r.profiles?.avatar_url || '',
+        category_name: r.categories?.name || 'General'
       }));
 
       // Local search fallback if needed
@@ -358,28 +496,28 @@ class ComprehensiveAdminRepository {
 
   async getRequestById(id: string) {
     try {
-      const { data: req, error: reqError } = await supabase.from('requests').select(`
+      const { data: req, error: reqError } = await supabase.from(ApiUrls.tables.requests).select(`
         *,
-        creator:profiles!requests_user_id_fkey(*),
-        category:categories(name)
+        profiles (*),
+        categories (name)
       `).eq('id', id).single();
 
       if (reqError || !req) throw reqError || new Error('Request not found');
 
-      const { data: applicantsData } = await supabase.from('join_requests').select(`
+      const { data: applicantsData } = await supabase.from(ApiUrls.tables.joinRequests).select(`
         *,
-        applicant:profiles!join_requests_user_id_fkey(full_name, avatar_url)
+        profiles (full_name, avatar_url)
       `).eq('request_id', id);
 
       const applicants = (applicantsData || []).map((j: any) => ({
         ...j,
-        user_name: j.applicant?.full_name || 'Unknown',
-        user_avatar: j.applicant?.avatar_url || ''
+        user_name: j.profiles?.full_name || 'Unknown',
+        user_avatar: j.profiles?.avatar_url || ''
       }));
 
       return {
         ...req,
-        category_name: req.category?.name || 'General',
+        category_name: req.categories?.name || 'General',
         join_requests: applicants
       };
     } catch (error) {
@@ -391,10 +529,10 @@ class ComprehensiveAdminRepository {
   async saveRequest(data: any) {
     try {
       if (data.id) {
-        const { error } = await supabase.from('requests').update({ ...data, updated_at: new Date().toISOString() }).eq('id', data.id);
+        const { error } = await supabase.from(ApiUrls.tables.requests).update({ ...data, updated_at: new Date().toISOString() }).eq('id', data.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from('requests').insert([data]);
+        const { error } = await supabase.from(ApiUrls.tables.requests).insert([data]);
         if (error) throw error;
       }
     } catch (error) {
@@ -405,7 +543,7 @@ class ComprehensiveAdminRepository {
 
   async updateRequestStatus(id: string, newStatus: string) {
     try {
-      const { error } = await supabase.from('requests').update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
+      const { error } = await supabase.from(ApiUrls.tables.requests).update({ status: newStatus, updated_at: new Date().toISOString() }).eq('id', id);
       if (error) throw error;
     } catch (error) {
       console.error('Error in updateRequestStatus:', error);
@@ -416,10 +554,10 @@ class ComprehensiveAdminRepository {
   // JOIN REQUESTS
   async getJoinRequests({ search = '', status = 'all', page = 1, pageSize = 8 }: any) {
     try {
-      let query = supabase.from('join_requests').select(`
+      let query = supabase.from(ApiUrls.tables.joinRequests).select(`
         *,
-        applicant:profiles!join_requests_user_id_fkey(full_name, avatar_url),
-        request:requests(title, user_id)
+        profiles (full_name, avatar_url),
+        requests (title, user_id)
       `, { count: 'exact' });
 
       if (status !== 'all') query = query.eq('status', status);
@@ -431,9 +569,9 @@ class ComprehensiveAdminRepository {
 
       let formattedData = (data || []).map((j: any) => ({
         ...j,
-        applicant_name: j.applicant?.full_name || 'Unknown',
-        applicant_avatar: j.applicant?.avatar_url || '',
-        request_title: j.request?.title || 'Unknown Post'
+        applicant_name: j.profiles?.full_name || 'Unknown',
+        applicant_avatar: j.profiles?.avatar_url || '',
+        request_title: j.requests?.title || 'Unknown Post'
       }));
 
       if (search.trim()) {
@@ -455,7 +593,7 @@ class ComprehensiveAdminRepository {
   // NOTIFICATIONS
   async getNotifications() {
     try {
-      const { data, error } = await supabase.from('notifications').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from(ApiUrls.tables.notifications).select('*').order('created_at', { ascending: false });
       if (error) throw error;
       return data || [];
     } catch (error) {
@@ -466,7 +604,7 @@ class ComprehensiveAdminRepository {
 
   async createNotification(notif: any) {
     try {
-      const { data, error } = await supabase.from('notifications').insert([{
+      const { data, error } = await supabase.from(ApiUrls.tables.notifications).insert([{
         ...notif,
         sent_count: notif.status === 'sent' ? Math.floor(Math.random() * 500) + 100 : 0
       }]).select().single();
@@ -482,9 +620,9 @@ class ComprehensiveAdminRepository {
   // REPORTS
   async getReports({ status = 'all', page = 1, pageSize = 8 }: any) {
     try {
-      let query = supabase.from('reports').select(`
+      let query = supabase.from(ApiUrls.tables.reports).select(`
         *,
-        reporter:profiles!reports_reporter_id_fkey(full_name)
+        profiles (full_name)
       `, { count: 'exact' });
 
       if (status !== 'all') query = query.eq('status', status);
@@ -496,7 +634,7 @@ class ComprehensiveAdminRepository {
 
       const formattedData = (data || []).map((r: any) => ({
         ...r,
-        reporter_name: r.reporter?.full_name || 'Anonymous',
+        reporter_name: r.profiles?.full_name || 'Anonymous',
         target_info: r.reported_type === 'user' ? 'Reported User' : 'Reported Post'
       }));
 
@@ -513,7 +651,7 @@ class ComprehensiveAdminRepository {
 
   async resolveReport(id: string, resolutionNotes: string) {
     try {
-      const { error } = await supabase.from('reports').update({ 
+      const { error } = await supabase.from(ApiUrls.tables.reports).update({ 
         status: 'resolved', 
         resolution_notes: resolutionNotes, 
         updated_at: new Date().toISOString() 
@@ -527,7 +665,7 @@ class ComprehensiveAdminRepository {
 
   async dismissReport(id: string) {
     try {
-      const { error } = await supabase.from('reports').update({ 
+      const { error } = await supabase.from(ApiUrls.tables.reports).update({ 
         status: 'dismissed', 
         resolution_notes: 'Dismissed by Admin after review.', 
         updated_at: new Date().toISOString() 
@@ -542,7 +680,7 @@ class ComprehensiveAdminRepository {
   // DEVICES
   async getDevices({ search = '', platformFilter = 'all', page = 1, pageSize = 8 }: any) {
     try {
-      let query = supabase.from('user_devices').select('*', { count: 'exact' });
+      let query = supabase.from(ApiUrls.tables.userDevices).select('*', { count: 'exact' });
 
       if (platformFilter !== 'all') {
         query = query.ilike('platform', `%${platformFilter}%`);

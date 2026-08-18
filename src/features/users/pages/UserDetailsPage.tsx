@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, ArrowLeft, ShieldAlert, CheckCircle, Smartphone, AlertTriangle, Clock, Calendar, UserX } from 'lucide-react';
+import { RefreshCw, ArrowLeft, ShieldAlert, CheckCircle, Smartphone, AlertTriangle, Clock, Calendar, UserX, Trash2, UserCheck } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { useNavigate, useParams } from 'react-router-dom';
+import { AlertDialog } from '@/components/common/AlertDialog';
+import { useToast } from '@/app/providers/ToastProvider';
 
 export function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -9,6 +11,14 @@ export function UserDetailsPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [confirmDialog, setConfirmDialog] = useState<{ isOpen: boolean; type: 'softDelete' | 'reactivate' | 'ban' | null; user: any }>({
+    isOpen: false,
+    type: null,
+    user: null
+  });
+
+  const { showToast } = useToast();
 
   const loadUser = async () => {
     setLoading(true);
@@ -53,6 +63,7 @@ export function UserDetailsPage() {
   const handleActivate = async () => {
     if (!window.confirm("Are you sure you want to activate this user?")) return;
     await adminRepo.activateUser(id as string);
+    showToast('User status updated to Active.', 'success');
     loadUser();
   };
 
@@ -60,6 +71,7 @@ export function UserDetailsPage() {
     const reason = window.prompt("Enter ban reason:");
     if (reason === null) return;
     await adminRepo.banUser(id as string, { reason: reason || 'Violated Terms', message: 'Account permanently banned.' });
+    showToast('User account permanently banned.', 'error');
     loadUser();
   };
 
@@ -67,17 +79,22 @@ export function UserDetailsPage() {
     const reason = window.prompt("Enter suspension reason:");
     if (reason === null) return;
     await adminRepo.suspendUser(id as string, { reason: reason || 'Suspended pending review', message: 'Account temporarily suspended.' });
+    showToast('User account temporarily suspended.', 'warning');
     loadUser();
   };
 
-  const handleToggleSoftDelete = async () => {
-    if (user.deleted_at) {
-      if (!window.confirm("Are you sure you want to reactivate this deleted user?")) return;
-      await adminRepo.reactivateUser(id as string);
-    } else {
-      if (!window.confirm("Are you sure you want to soft-delete this user?")) return;
-      await adminRepo.softDeleteUser(id as string);
+  const handleConfirmAction = async () => {
+    if (!confirmDialog.user || !confirmDialog.type) return;
+    
+    if (confirmDialog.type === 'softDelete') {
+      await adminRepo.softDeleteUser(confirmDialog.user.id);
+      showToast(`User ${confirmDialog.user.full_name || 'Anonymous'} soft-deleted. Account set to deleted_at timestamp.`, 'info');
+    } else if (confirmDialog.type === 'reactivate') {
+      await adminRepo.reactivateUser(confirmDialog.user.id);
+      showToast(`User ${confirmDialog.user.full_name || 'Anonymous'} reactivated (deleted_at reset to NULL).`, 'success');
     }
+    
+    setConfirmDialog({ isOpen: false, type: null, user: null });
     loadUser();
   };
 
@@ -140,7 +157,7 @@ export function UserDetailsPage() {
             </button>
           )}
           <button 
-            onClick={handleToggleSoftDelete} 
+            onClick={() => setConfirmDialog({ isOpen: true, type: user.deleted_at ? 'reactivate' : 'softDelete', user: user })} 
             className="px-4 py-2 bg-slate-800 hover:bg-slate-700 transition-colors text-slate-200 border border-slate-700 rounded-xl text-xs font-bold"
           >
             {user.deleted_at ? 'Restore User' : 'Soft Delete'}
@@ -261,6 +278,25 @@ export function UserDetailsPage() {
         </div>
 
       </div>
+
+      <AlertDialog
+        isOpen={confirmDialog.isOpen}
+        onClose={() => setConfirmDialog({ isOpen: false, type: null, user: null })}
+        onConfirm={handleConfirmAction}
+        title={
+          confirmDialog.type === 'softDelete'
+            ? `Soft Delete ${confirmDialog.user?.full_name}?`
+            : `Reactivate ${confirmDialog.user?.full_name}?`
+        }
+        description={
+          confirmDialog.type === 'softDelete'
+            ? 'This will set the deleted_at timestamp. The user will be hidden from public app feeds, but the row will remain in the database.'
+            : 'This will clear the deleted_at timestamp (deleted_at = NULL). Any existing suspension or ban status will remain active.'
+        }
+        confirmText={confirmDialog.type === 'softDelete' ? 'Soft Delete User' : 'Restore Account'}
+        variant={confirmDialog.type === 'softDelete' ? 'danger' : 'success'}
+        icon={confirmDialog.type === 'softDelete' ? Trash2 : UserCheck}
+      />
     </div>
   );
 }

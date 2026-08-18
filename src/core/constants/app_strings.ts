@@ -320,7 +320,8 @@ export const AppStrings = {
     alerts: {
       requiredFields: 'Title and Message are required!',
       sent: 'Broadcast notification sent!',
-      scheduled: 'Notification scheduled successfully!'
+      scheduled: 'Notification scheduled successfully!',
+      pastDateError: 'Cannot schedule a notification in the past.'
     }
   },
   Reports: {
@@ -353,16 +354,94 @@ export const AppStrings = {
   },
   Settings: {
     title: 'App Settings & Remote Config',
-    subtitle: 'Manage app version enforcement and activity feature flags',
+    subtitle: 'Manage maintenance mode, app version enforcement, and feature flags',
+    saveBtn: 'Save Configurations',
     flagsHeader: 'Activity Module Flags',
     flags: {
       chat: 'In-App Activity Chat',
       travel: 'Travel & Carpooling Posts',
       sports: 'Sports Match Scheduling'
     },
-    saveBtn: 'Save Configurations',
+    maintenance: {
+      header: 'Maintenance Mode',
+      globalMaintenance: 'Enable Global Maintenance (All Versions)',
+      addRuleBtn: 'Add Targeted Rule',
+      rulePlatform: 'Platform Target',
+      ruleVersions: 'Affected Versions (Comma Separated)',
+      ruleTitle: 'Maintenance Title',
+      ruleMessage: 'Maintenance Message',
+      ruleActive: 'Rule Active'
+    },
+    version: {
+      header: 'Version Control & Force Update',
+      androidTab: 'Android',
+      iosTab: 'iOS',
+      minVersion: 'Global Minimum Supported Version',
+      latestVersion: 'Latest Store Version',
+      storeUrl: 'App Store URL',
+      blockedHeader: 'Blocked / Force Update Versions',
+      addBlockedBtn: 'Add Blocked Version',
+      versionTarget: 'Version String (e.g. 1.0.1)',
+      updateTitle: 'Update Dialog Title',
+      updateMessage: 'Update Dialog Message',
+      releaseNotes: 'Release Notes (Bulleted List)',
+      addNoteBtn: 'Add Note'
+    },
     alerts: {
-      saved: 'App Settings Saved!'
+      saved: 'App Settings Saved!',
+      saveError: 'Failed to save app settings.'
+    }
+  },
+  AdminRoles: {
+    title: 'Admin Roles & Access Control',
+    subtitle: 'Manage backoffice administrator credentials, moderator permissions, and role delegations.',
+    assignRoleBtn: '+ Assign Admin Role',
+    loading: 'Loading roles...',
+    cards: {
+      superAdmins: 'Super Admins',
+      moderators: 'Moderators',
+      totalStaff: 'Total Backoffice Staff'
+    },
+    tableHeaders: {
+      user: 'User',
+      role: 'Role',
+      assignedDate: 'Assigned Date',
+      actions: 'Actions'
+    },
+    roles: {
+      admin: 'Admin',
+      moderator: 'Moderator'
+    },
+    actions: {
+      revoke: 'Revoke'
+    },
+    modal: {
+      title: 'Assign Admin Role',
+      searchPlaceholder: 'Search users to assign role...',
+      noUsers: 'No active users found.',
+      selectUserLabel: 'Select User',
+      selectRoleLabel: 'Select Role',
+      cancelBtn: 'Cancel',
+      assignBtn: 'Assign Role'
+    },
+    createModal: {
+      title: 'Create New Admin User',
+      nameLabel: 'Full Name',
+      namePlaceholder: 'e.g. John Doe',
+      emailLabel: 'Email Address',
+      emailPlaceholder: 'admin@activityconnect.com',
+      passwordLabel: 'Temporary Password',
+      passwordPlaceholder: 'Minimum 6 characters',
+      roleLabel: 'Select Role',
+      cancelBtn: 'Cancel',
+      createBtn: 'Create Account'
+    },
+    alerts: {
+      revoked: 'Role revoked successfully.',
+      assigned: 'Role assigned successfully.',
+      selectUser: 'Please select a user and a role.',
+      created: 'Admin user created successfully!',
+      createError: 'Failed to create admin user.'
     }
   },
   Common: {

@@ -1,13 +1,20 @@
 import React, { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Layers, Users, Smartphone, Settings, LogOut, Activity, Menu, X, FileText, UserPlus, Tag, Bell, History, Flag } from 'lucide-react'
+import { Layers, Users, Smartphone, Settings, LogOut, Activity, Menu, X, FileText, UserPlus, Tag, Bell, History, Flag, ShieldAlert } from 'lucide-react'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { useToast } from '@/app/providers/ToastProvider'
 import { AppStrings } from '@/core/constants/app_strings'
 
 export const AdminLayout: React.FC = () => {
   const { user, signOut } = useAuth()
+  const { showToast } = useToast()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const handleLogout = async () => {
+    await signOut()
+    showToast('Logged out successfully.', 'info')
+  }
 
   const sections = [
     {
@@ -37,7 +44,8 @@ export const AdminLayout: React.FC = () => {
       title: AppStrings.Navigation.groups.system,
       items: [
         { name: AppStrings.Navigation.items.devices, href: '/devices', icon: Smartphone },
-        { name: AppStrings.Navigation.items.settings, href: '/settings', icon: Settings },
+        { name: 'Admin Roles', href: '/roles', icon: ShieldAlert },
+        { name: AppStrings.Navigation.items.settings, href: '/app-settings', icon: Settings },
       ]
     }
   ]
@@ -51,7 +59,7 @@ export const AdminLayout: React.FC = () => {
           </h3>
           <div className="space-y-1">
             {section.items.map((item) => {
-              const isActive = location.pathname.startsWith(item.href)
+              const isActive = location.pathname === item.href || location.pathname.startsWith(`${item.href}/`)
               return (
                 <Link
                   key={item.name}
@@ -75,10 +83,10 @@ export const AdminLayout: React.FC = () => {
   )
 
   return (
-    <div className="min-h-screen bg-[#0B1121] text-slate-100 flex flex-col md:flex-row font-sans antialiased selection:bg-emerald-500/30">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#0B1121] text-slate-100 font-sans antialiased selection:bg-emerald-500/30 flex-col md:flex-row">
 
       {/* ── DESKTOP SIDEBAR ─────────────────────────────────────────────── */}
-      <aside className="hidden md:flex flex-col w-[280px] border-r border-slate-800/80 bg-[#111827] pt-6 pb-4 space-y-8 shrink-0">
+      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 h-full overflow-y-auto border-r border-slate-800 bg-[#111827] pt-6 pb-4 space-y-8">
         
         {/* Brand */}
         <div className="flex items-center gap-3 px-6">
@@ -108,7 +116,7 @@ export const AdminLayout: React.FC = () => {
               </div>
             </div>
             <button
-              onClick={signOut}
+              onClick={handleLogout}
               title={AppStrings.Navigation.logout}
               className="p-2 shrink-0 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
             >
@@ -142,7 +150,7 @@ export const AdminLayout: React.FC = () => {
           </nav>
           <div className="p-4 border-t border-slate-800">
              <button
-              onClick={() => { signOut(); setMobileOpen(false) }}
+              onClick={() => { handleLogout(); setMobileOpen(false) }}
               className="w-full flex items-center justify-center gap-2 text-sm font-semibold bg-rose-500/10 text-rose-400 py-3 rounded-xl transition-colors"
             >
               <LogOut className="w-4 h-4" /> {AppStrings.Navigation.logout}
@@ -152,9 +160,13 @@ export const AdminLayout: React.FC = () => {
       )}
 
       {/* ── MAIN CONTENT ────────────────────────────────────────────────── */}
-      <main className="flex-1 overflow-y-auto p-4 md:p-10 relative">
-        <Outlet />
-      </main>
+      <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+          <div className="max-w-7xl mx-auto space-y-6 pb-12">
+            <Outlet />
+          </div>
+        </main>
+      </div>
     </div>
   )
 }

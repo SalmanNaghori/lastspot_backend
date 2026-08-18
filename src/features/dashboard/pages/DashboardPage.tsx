@@ -34,12 +34,12 @@ export function DashboardPage() {
   useEffect(() => {
     Promise.all([
       adminRepo.getDashboardStats(),
-      adminRepo.getRequests({ page: 1, pageSize: 3 }),
-      adminRepo.getRecentUsers(3),
-      adminRepo.getRecentDevices(3)
+      adminRepo.getRecentRequests(5),
+      adminRepo.getRecentUsers(5),
+      adminRepo.getRecentDevices(5)
     ]).then(([statsData, reqsData, usersData, devicesData]) => {
       setStats(statsData);
-      setRecentRequests(reqsData.requests);
+      setRecentRequests(reqsData);
       setRecentUsers(usersData);
       setRecentDevices(devicesData);
       setLoading(false);
@@ -115,7 +115,7 @@ export function DashboardPage() {
           <DashboardStatCard 
             title={AppStrings.Dashboard.cards.requests.title} 
             value={stats.requests.total} 
-            subtitle={`${stats.requests.active} ${AppStrings.Dashboard.cards.requests.subtext}`}
+            subtitle={`${stats.requests.active} Open & Active`}
             icon={FileText} 
             iconColor="text-cyan-400" 
             onClick={() => navigate('/requests')}
@@ -123,7 +123,7 @@ export function DashboardPage() {
           <DashboardStatCard 
             title={AppStrings.Dashboard.cards.joinRequests.title} 
             value={stats.joinRequests.pending} 
-            subtitle={AppStrings.Dashboard.cards.joinRequests.subtext}
+            subtitle={`${stats.joinRequests.pending} Awaiting approval`}
             icon={UserPlus} 
             iconColor="text-amber-400" 
             onClick={() => navigate('/join-requests?status=pending')}
@@ -152,6 +152,14 @@ export function DashboardPage() {
             iconColor="text-slate-300" 
             onClick={() => navigate('/devices?platform=iOS')}
           />
+          <DashboardStatCard 
+            title="Web/Desktop" 
+            value={stats.devices.web} 
+            subtitle="Web Platform"
+            icon={MonitorSmartphone} 
+            iconColor="text-sky-400" 
+            onClick={() => navigate('/devices?platform=Web')}
+          />
         </div>
       </div>
 
@@ -170,10 +178,12 @@ export function DashboardPage() {
             )}
             {recentUsers.map((u: any) => (
               <div key={u.id} onClick={() => navigate(`/users/${u.id}`)} className="py-2.5 flex items-center gap-3 cursor-pointer hover:bg-slate-800/30 px-2 rounded-xl transition-colors">
-                <img src={u.avatar_url || 'https://via.placeholder.com/40'} alt="" className="w-7 h-7 rounded-full bg-slate-800 object-cover" />
+                <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-[10px] font-bold text-slate-400">
+                  {u.full_name?.charAt(0)?.toUpperCase() || u.email?.charAt(0)?.toUpperCase() || '?'}
+                </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-slate-200 truncate">{u.full_name}</p>
-                  <p className="text-[10px] text-slate-500 truncate">{u.email}</p>
+                  <p className="text-xs font-semibold text-slate-200 truncate">{u.full_name || u.email || 'Unknown User'}</p>
+                  <p className="text-[10px] text-slate-500 truncate">{u.email || 'No email'}</p>
                 </div>
               </div>
             ))}
@@ -193,11 +203,16 @@ export function DashboardPage() {
             {recentRequests.map((r: any) => (
               <div key={r.id} onClick={() => navigate(`/requests/${r.id}`)} className="py-3 flex items-center justify-between cursor-pointer hover:bg-slate-800/30 px-2 rounded-xl transition-colors">
                 <div className="flex-1 min-w-0 pr-3">
-                  <p className="text-xs font-semibold text-slate-200 truncate">{r.title}</p>
-                  <p className="text-[10px] text-slate-500 truncate mt-0.5">{r.location}</p>
+                  <p className="text-xs font-semibold text-slate-200 truncate">
+                    {r.categories?.icon && <span className="mr-1">{r.categories.icon}</span>}
+                    {r.title || 'Untitled Post'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 truncate mt-0.5">
+                    {r.location_name || 'Unknown Location'} • {r.profiles?.full_name || r.profiles?.email || 'Unknown User'}
+                  </p>
                 </div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shrink-0">
-                  {r.status}
+                  {r.status || 'open'}
                 </span>
               </div>
             ))}
@@ -215,12 +230,14 @@ export function DashboardPage() {
               <p className="text-xs text-slate-500 py-4 text-center">{AppStrings.Dashboard.sections.noRecentDevices}</p>
             )}
             {recentDevices.map((d: any) => (
-              <div key={d.id} onClick={() => navigate(`/users/${d.user_id}`)} className="py-2.5 flex flex-col justify-center cursor-pointer hover:bg-slate-800/30 px-2 rounded-xl transition-colors">
+              <div key={d.id} className="py-2.5 flex flex-col justify-center cursor-default hover:bg-slate-800/30 px-2 rounded-xl transition-colors">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-200">{d.device_model}</p>
-                  <span className="text-[9px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">{d.platform}</span>
+                  <p className="text-xs font-semibold text-slate-200">{d.device_name || 'Unknown Device'}</p>
+                  <span className="text-[9px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">{d.platform || 'Unknown'}</span>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1">{AppStrings.Dashboard.sections.userLabel}{d.user_name}</p>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  {AppStrings.Dashboard.sections.userLabel}{d.profiles?.full_name || d.profiles?.email || 'Unknown User'}
+                </p>
               </div>
             ))}
           </div>

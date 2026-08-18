@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, RefreshCw } from 'lucide-react';
+import { Search, Plus, RefreshCw, ChevronDown } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { useNavigate } from 'react-router-dom';
 import { AppStrings } from '@/core/constants/app_strings';
+import { useToast } from '@/app/providers/ToastProvider';
 
 export function RequestsPage() {
   const navigate = useNavigate();
@@ -47,14 +48,16 @@ export function RequestsPage() {
     loadRequests();
   }, [search, categoryFilter, statusFilter, page]);
 
+  const { showToast } = useToast();
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.location) {
-      alert(AppStrings.Requests.alerts.requiredFields);
+      showToast('Title and Location are required!', 'error');
       return;
     }
     await adminRepo.saveRequest(formData);
-    alert(AppStrings.Requests.alerts.published);
+    showToast('Activity Request / Post published successfully!', 'success');
     setIsCreateOpen(false);
     loadRequests();
   };
@@ -88,30 +91,36 @@ export function RequestsPage() {
           />
         </div>
 
-        <select
-          value={categoryFilter}
-          onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
-          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
-        >
-          <option value="all">{AppStrings.Requests.filters.allCategories}</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={categoryFilter}
+            onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+            className="w-full sm:w-auto appearance-none bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+          >
+            <option value="all">{AppStrings.Requests.filters.allCategories}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+        </div>
 
-        <select
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
-        >
-          <option value="all">{AppStrings.Requests.filters.allStatuses}</option>
-          <option value="published">Published</option>
-          <option value="draft">Draft</option>
-          <option value="full">Full</option>
-          <option value="closed">Closed</option>
-          <option value="reported">Reported</option>
-          <option value="cancelled">Cancelled</option>
-        </select>
+        <div className="relative">
+          <select
+            value={statusFilter}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            className="w-full sm:w-auto appearance-none bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+          >
+            <option value="all">{AppStrings.Requests.filters.allStatuses}</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+            <option value="full">Full</option>
+            <option value="closed">Closed</option>
+            <option value="reported">Reported</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+          <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+        </div>
       </div>
 
       {/* DATA TABLE */}

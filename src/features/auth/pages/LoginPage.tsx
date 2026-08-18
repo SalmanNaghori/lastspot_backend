@@ -4,6 +4,7 @@ import { supabase } from '@/core/supabase/client'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { Eye, EyeOff, Loader2, Shield } from 'lucide-react'
 import { AppStrings } from '@/core/constants/app_strings'
+import { useToast } from '@/app/providers/ToastProvider'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,9 @@ export const LoginPage: React.FC = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [touched, setTouched] = useState({ email: false, password: false })
+  const [rememberMe, setRememberMe] = useState(true)
+
+  const { showToast } = useToast()
 
   const navigate = useNavigate()
   const { session, loading } = useAuth()
@@ -89,13 +93,29 @@ export const LoginPage: React.FC = () => {
 
       if (roleError || !roleData || roleData.role !== 'admin') {
         await supabase.auth.signOut()
-        setError(AppStrings.Auth.errors.noPermission)
+        showToast('Access Denied: Your account does not have Admin privileges.', 'error')
         return
       }
 
+      // 3. Persistent Session Storage Handling based on "Remember Me"
+      const sessionPayload = {
+        user: signInData.user,
+        role: roleData.role,
+        rememberMe
+      }
+
+      if (rememberMe) {
+        localStorage.setItem('activity_admin_session', JSON.stringify(sessionPayload))
+        sessionStorage.removeItem('activity_admin_session')
+      } else {
+        sessionStorage.setItem('activity_admin_session', JSON.stringify(sessionPayload))
+        localStorage.removeItem('activity_admin_session')
+      }
+
+      showToast(`Welcome back, ${signInData.user.user_metadata?.full_name || 'Admin'}!`, 'success')
       navigate('/dashboard', { replace: true })
     } catch (err: any) {
-      setError(friendlyAuthError(err.message || ''))
+      showToast(`Access Denied: ${friendlyAuthError(err.message || '')}`, 'error')
     } finally {
       setIsSubmitting(false)
     }
@@ -176,6 +196,19 @@ export const LoginPage: React.FC = () => {
             )}
           </div>
 
+          {/* Remember Me Checkbox */}
+          <div className="flex items-center justify-between text-sm pt-1">
+            <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="w-4 h-4 rounded bg-[#050B14] border-slate-800 text-emerald-500 accent-emerald-500"
+              />
+              <span>Remember me</span>
+            </label>
+          </div>
+
           {error && (
             <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-3.5 flex items-start gap-2">
               <p className="text-sm text-rose-400 font-medium">{error}</p>
@@ -195,7 +228,6 @@ export const LoginPage: React.FC = () => {
           </button>
         </form>
       </div>
-
     </div>
   )
 }

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Send, Info } from 'lucide-react';
+import { Send, Info, ChevronDown } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { useNavigate } from 'react-router-dom';
 import { AppStrings } from '@/core/constants/app_strings';
+import { useToast } from '@/app/providers/ToastProvider';
 
 export function NotificationsPage() {
   const navigate = useNavigate();
@@ -11,11 +12,28 @@ export function NotificationsPage() {
   const [targetAudience, setTargetAudience] = useState('all');
   const [schedule, setSchedule] = useState('');
 
+  const getMinDateTime = () => {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+  };
+
+  const { showToast } = useToast();
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !message) {
-      alert(AppStrings.Notifications.alerts.requiredFields);
+      showToast('Title and Message are required!', 'error');
       return;
+    }
+    
+    if (schedule) {
+      const selectedTime = new Date(schedule).getTime();
+      const currentTime = new Date().getTime();
+      if (selectedTime < currentTime) {
+        showToast(AppStrings.Notifications.alerts.pastDateError, 'error');
+        return;
+      }
     }
     await adminRepo.createNotification({
       title,
@@ -24,7 +42,7 @@ export function NotificationsPage() {
       status: schedule ? 'scheduled' : 'sent',
       scheduled_at: schedule || null
     });
-    alert(schedule ? AppStrings.Notifications.alerts.scheduled : AppStrings.Notifications.alerts.sent);
+    showToast(schedule ? 'Notification scheduled successfully!' : 'Broadcast notification sent!', 'success');
     setTitle('');
     setMessage('');
     navigate('/notifications-history');
@@ -65,15 +83,18 @@ export function NotificationsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-slate-300 mb-1 font-semibold">{AppStrings.Notifications.form.audienceLabel}</label>
-            <select
-              value={targetAudience}
-              onChange={(e) => setTargetAudience(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100"
-            >
-              <option value="all">{AppStrings.Notifications.audiences.all}</option>
-              <option value="category">{AppStrings.Notifications.audiences.category}</option>
-              <option value="location">{AppStrings.Notifications.audiences.location}</option>
-            </select>
+            <div className="relative">
+              <select
+                value={targetAudience}
+                onChange={(e) => setTargetAudience(e.target.value)}
+                className="w-full appearance-none bg-slate-950 border border-slate-800 rounded-xl p-3 pr-9 text-slate-100 cursor-pointer"
+              >
+                <option value="all">{AppStrings.Notifications.audiences.all}</option>
+                <option value="category">{AppStrings.Notifications.audiences.category}</option>
+                <option value="location">{AppStrings.Notifications.audiences.location}</option>
+              </select>
+              <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            </div>
           </div>
 
           <div>
@@ -81,8 +102,10 @@ export function NotificationsPage() {
             <input
               type="datetime-local"
               value={schedule}
+              min={getMinDateTime()}
               onChange={(e) => setSchedule(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100"
+              style={{ colorScheme: 'dark' }}
             />
           </div>
         </div>

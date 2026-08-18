@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, ToggleRight, ToggleLeft, RefreshCw } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { AppStrings } from '@/core/constants/app_strings';
+import { useToast } from '@/app/providers/ToastProvider';
 
 export function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([]);
@@ -58,9 +59,14 @@ export function CategoriesPage() {
     setIsModalOpen(true);
   };
 
+  const { showToast } = useToast();
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name) return;
+    if (!formData.name) {
+      showToast('Category name is required', 'error');
+      return;
+    }
     
     await adminRepo.saveCategory({
       ...formData,
@@ -68,13 +74,22 @@ export function CategoriesPage() {
       display_order: parseInt(formData.display_order as any)
     });
     
+    showToast('Category saved successfully!', 'success');
     setIsModalOpen(false);
     loadCats();
   };
 
   const handleToggleActive = async (category: any) => {
+    // Optimistic UI update to prevent flickering
+    setCategories(prev => prev.map(c => c.id === category.id ? { ...c, is_active: !c.is_active } : c));
+    
     await adminRepo.toggleCategoryActive(category.id);
-    loadCats();
+    showToast('Category status updated', 'info');
+    
+    // Silent reload to ensure data sync without global loading spinner
+    adminRepo.getCategories().then((res) => {
+      setCategories(res);
+    });
   };
 
   const handleDelete = async (id: string) => {
@@ -100,73 +115,69 @@ export function CategoriesPage() {
         </button>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-sm overflow-hidden flex flex-col hide-scrollbar">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead className="bg-slate-950/50 border-b border-slate-800 text-[11px] uppercase text-slate-400 font-semibold tracking-wider">
-              <tr>
-                <th className="py-4 px-6 whitespace-nowrap">{AppStrings.Categories.tableHeaders.order}</th>
-                <th className="py-4 px-6 whitespace-nowrap">{AppStrings.Categories.tableHeaders.iconName}</th>
-                <th className="py-4 px-6 whitespace-nowrap">{AppStrings.Categories.tableHeaders.slug}</th>
-                <th className="py-4 px-6 whitespace-nowrap">{AppStrings.Categories.tableHeaders.description}</th>
-                <th className="py-4 px-6 whitespace-nowrap">{AppStrings.Categories.tableHeaders.status}</th>
-                <th className="py-4 px-6 whitespace-nowrap text-right">{AppStrings.Categories.tableHeaders.actions}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 text-sm text-slate-300">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-500">{AppStrings.Categories.loading}</td>
-                </tr>
-              ) : categories.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-slate-500">{AppStrings.Categories.noData}</td>
-                </tr>
-              ) : (
-                categories.map((cat) => (
-                  <tr key={cat.id} className="hover:bg-slate-800/30 transition">
-                    <td className="py-4 px-6 font-mono text-slate-500">#{cat.display_order}</td>
-                    <td className="py-4 px-6 flex items-center gap-3">
-                      <span className="text-xl bg-slate-950 p-2 rounded-lg border border-slate-800 flex items-center justify-center w-10 h-10">{cat.icon}</span>
-                      <span className="font-semibold text-slate-200">{cat.name}</span>
-                    </td>
-                    <td className="py-4 px-6 text-slate-400 font-mono text-xs">{cat.slug}</td>
-                    <td className="py-4 px-6 text-slate-400 truncate max-w-xs">{cat.description || '—'}</td>
-                    <td className="py-4 px-6">
-                      <button
-                        onClick={() => handleToggleActive(cat)}
-                        className={`px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full ${
-                          cat.is_active
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-slate-500/10 text-slate-400 border border-slate-500/20'
-                        }`}
-                      >
-                        {cat.is_active ? AppStrings.Categories.status.active : AppStrings.Categories.status.disabled}
-                      </button>
-                    </td>
-                    <td className="py-4 px-6 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <button
-                          onClick={() => openModal(cat)}
-                          className="text-indigo-400 hover:text-indigo-300 font-medium text-xs flex items-center gap-1 transition-colors"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" /> {AppStrings.Categories.actions.edit}
-                        </button>
-                        <button
-                          onClick={() => handleDelete(cat.id)}
-                          className="text-rose-500 hover:text-rose-400 font-medium text-xs flex items-center gap-1 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> {AppStrings.Categories.actions.delete}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {loading ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" /> {AppStrings.Categories.loading}
         </div>
-      </div>
+      ) : categories.length === 0 ? (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
+          {AppStrings.Categories.noData}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {categories.map((cat) => (
+            <div key={cat.id} className="bg-[#111827] border border-slate-800/80 rounded-2xl p-6 flex flex-col hover:border-slate-700 transition-colors">
+              <div className="flex justify-between items-start">
+                <div className="flex gap-4 items-start">
+                  <span className="text-2xl leading-none pt-0.5">{cat.icon}</span>
+                  <div>
+                    <h3 className="text-[15px] font-bold text-slate-100 leading-tight">{cat.name}</h3>
+                    <p className="text-emerald-400 font-mono text-[12px] mt-1.5">/{cat.slug}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => handleToggleActive(cat)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out focus:outline-none ${
+                    cat.is_active ? 'bg-emerald-500' : 'bg-slate-700'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-300 ease-in-out ${
+                      cat.is_active ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+              
+              <p className="text-slate-400 text-[13px] mt-5 flex-1 line-clamp-2">
+                {cat.description || '—'}
+              </p>
+              
+              <div className="h-px bg-slate-800/60 my-5 w-full" />
+              
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500 font-mono text-[12px] tracking-wide">
+                  Order: #{cat.display_order}
+                </span>
+                <div className="flex items-center gap-4">
+                  <button 
+                    onClick={() => handleDelete(cat.id)} 
+                    className="text-slate-500 hover:text-rose-400 font-semibold text-[13px] transition-colors"
+                  >
+                    {AppStrings.Categories.actions.delete}
+                  </button>
+                  <button 
+                    onClick={() => openModal(cat)} 
+                    className="text-emerald-500 hover:text-emerald-400 font-semibold text-[13px] transition-colors"
+                  >
+                    {AppStrings.Categories.actions.edit}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">

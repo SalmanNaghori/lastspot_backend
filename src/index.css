@@ -37,3 +37,32 @@ body {
   box-sizing: border-box;
   border-color: hsl(var(--border));
 }
+
+/* Toast Animation */
+@keyframes toastBounceIn {
+  0% {
+    transform: translateY(80px) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    transform: translateY(-20px) scale(1.06);
+    opacity: 1;
+  }
+  45% {
+    transform: translateY(10px) scale(0.97);
+  }
+  65% {
+    transform: translateY(-6px) scale(1.02);
+  }
+  85% {
+    transform: translateY(3px) scale(0.99);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-toast-slide {
+  animation: toastBounceIn 2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}

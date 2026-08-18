@@ -4,7 +4,8 @@ import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { UsersPage } from '@/features/users/pages/UsersPage'
 import { UserDetailsPage } from '@/features/users/pages/UserDetailsPage'
 import { DevicesPage } from '@/features/devices/pages/DevicesPage'
-import { SettingsPage } from '@/features/settings/pages/SettingsPage'
+import { AppSettingsPage } from '@/features/settings/pages/AppSettingsPage'
+import { AdminRolesPage } from '@/features/roles/pages/AdminRolesPage'
 
 import { RequestsPage } from '@/features/requests/pages/RequestsPage'
 import { RequestDetailsPage } from '@/features/requests/pages/RequestDetailsPage'
@@ -48,7 +49,8 @@ export const router = createBrowserRouter([
           { path: '/reports', element: <ReportsPage /> },
           
           { path: '/devices', element: <DevicesPage /> },
-          { path: '/settings', element: <SettingsPage /> },
+          { path: '/roles', element: <AdminRolesPage /> },
+          { path: '/app-settings', element: <AppSettingsPage /> },
         ]
       }
     ],
