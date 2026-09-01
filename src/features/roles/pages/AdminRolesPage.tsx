@@ -21,7 +21,16 @@ export function AdminRolesPage() {
   };
 
   useEffect(() => {
-    fetchRoles();
+    let ignore = false;
+    adminRepo.getAdminUsers().then((data) => {
+      if (!ignore) {
+        setRoles(data);
+        setLoading(false);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const handleRevoke = async (userId: string, role: string) => {
@@ -30,7 +39,7 @@ export function AdminRolesPage() {
       await adminRepo.revokeRole(userId, role);
       showToast(AppStrings.AdminRoles.alerts.revoked, 'success');
       fetchRoles();
-    } catch (err) {
+    } catch {
       showToast('Failed to revoke role.', 'error');
     }
   };

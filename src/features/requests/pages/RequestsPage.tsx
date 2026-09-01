@@ -7,6 +7,7 @@ import { useToast } from '@/app/providers/ToastProvider';
 
 export function RequestsPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -32,12 +33,11 @@ export function RequestsPage() {
     notification_audience: 'all'
   });
 
-  const loadRequests = () => {
+  const loadRequests = async () => {
     setLoading(true);
-    adminRepo.getRequests({ search, categoryId: categoryFilter, status: statusFilter, page, pageSize: 6 }).then((res) => {
-      setData(res);
-      setLoading(false);
-    });
+    const res = await adminRepo.getRequests({ search, categoryId: categoryFilter, status: statusFilter, page, pageSize: 6 });
+    setData(res);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -45,10 +45,17 @@ export function RequestsPage() {
   }, []);
 
   useEffect(() => {
-    loadRequests();
+    let ignore = false;
+    adminRepo.getRequests({ search, categoryId: categoryFilter, status: statusFilter, page, pageSize: 6 }).then((res) => {
+      if (!ignore) {
+        setData(res);
+        setLoading(false);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
   }, [search, categoryFilter, statusFilter, page]);
-
-  const { showToast } = useToast();
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +92,7 @@ export function RequestsPage() {
           <input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => { setLoading(true); setSearch(e.target.value); setPage(1); }}
             placeholder={AppStrings.Requests.searchPlaceholder}
             className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
           />
@@ -94,7 +101,7 @@ export function RequestsPage() {
         <div className="relative">
           <select
             value={categoryFilter}
-            onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+            onChange={(e) => { setLoading(true); setCategoryFilter(e.target.value); setPage(1); }}
             className="w-full sm:w-auto appearance-none bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
             <option value="all">{AppStrings.Requests.filters.allCategories}</option>
@@ -108,7 +115,7 @@ export function RequestsPage() {
         <div className="relative">
           <select
             value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            onChange={(e) => { setLoading(true); setStatusFilter(e.target.value); setPage(1); }}
             className="w-full sm:w-auto appearance-none bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
             <option value="all">{AppStrings.Requests.filters.allStatuses}</option>

@@ -65,13 +65,9 @@ export function AppSettingsPage() {
   const { showToast } = useToast();
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
-
-  const fetchSettings = async () => {
-    setLoading(true);
-    try {
-      const data = await adminRepo.getAppSettings();
+    let ignore = false;
+    adminRepo.getAppSettings().then((data) => {
+      if (ignore) return;
       const maintenanceData = data.find(s => s.key === 'maintenance_mode');
       const versionData = data.find(s => s.key === 'version_control');
       
@@ -81,12 +77,17 @@ export function AppSettingsPage() {
       if (versionData && versionData.value) {
         setVersion(versionData.value);
       }
-    } catch (error) {
-      showToast('Failed to load app settings.', 'error');
-    } finally {
       setLoading(false);
-    }
-  };
+    }).catch(() => {
+      if (ignore) return;
+      showToast('Failed to load app settings.', 'error');
+      setLoading(false);
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [showToast]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -94,7 +95,7 @@ export function AppSettingsPage() {
       await adminRepo.updateAppSetting('maintenance_mode', maintenance);
       await adminRepo.updateAppSetting('version_control', version);
       showToast(AppStrings.Settings.alerts.saved, 'success');
-    } catch (error) {
+    } catch {
       showToast(AppStrings.Settings.alerts.saveError, 'error');
     } finally {
       setSaving(false);

@@ -7,6 +7,7 @@ import { useToast } from '@/app/providers/ToastProvider';
 export function RequestDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [request, setRequest] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,7 +20,18 @@ export function RequestDetailsPage() {
   };
 
   useEffect(() => {
-    loadDetails();
+    let ignore = false;
+    if (id) {
+      adminRepo.getRequestById(id).then((r) => {
+        if (!ignore) {
+          setRequest(r);
+          setLoading(false);
+        }
+      });
+    }
+    return () => {
+      ignore = true;
+    };
   }, [id]);
 
   if (loading || !request) {
@@ -29,8 +41,6 @@ export function RequestDetailsPage() {
       </div>
     );
   }
-
-  const { showToast } = useToast();
 
   const handleStatusUpdate = async (status: string) => {
     await adminRepo.updateRequestStatus(id as string, status);

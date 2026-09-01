@@ -5,6 +5,51 @@ import { useAuth } from '@/app/providers/AuthProvider'
 import { useToast } from '@/app/providers/ToastProvider'
 import { AppStrings } from '@/core/constants/app_strings'
 
+interface NavContentProps {
+  sections: Array<{
+    title: string
+    items: Array<{
+      name: string
+      href: string
+      icon: React.ElementType
+    }>
+  }>
+  pathname: string
+  onItemClick: () => void
+}
+
+const NavContent: React.FC<NavContentProps> = ({ sections, pathname, onItemClick }) => (
+  <div className="space-y-6">
+    {sections.map((section, idx) => (
+      <div key={idx} className="space-y-2">
+        <h3 className="px-4 text-[10px] font-bold text-slate-500 tracking-widest uppercase">
+          {section.title}
+        </h3>
+        <div className="space-y-1">
+          {section.items.map((item) => {
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                onClick={onItemClick}
+                className={`flex items-center gap-4 px-4 py-3 mx-2 rounded-xl text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/50 shadow-inner'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
+                }`}
+              >
+                <item.icon className="w-4 h-4" />
+                <span>{item.name}</span>
+              </Link>
+            )
+          })}
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
 export const AdminLayout: React.FC = () => {
   const { user, signOut } = useAuth()
   const { showToast } = useToast()
@@ -50,38 +95,6 @@ export const AdminLayout: React.FC = () => {
     }
   ]
 
-  const NavContent = () => (
-    <div className="space-y-6">
-      {sections.map((section, idx) => (
-        <div key={idx} className="space-y-2">
-          <h3 className="px-4 text-[10px] font-bold text-slate-500 tracking-widest uppercase">
-            {section.title}
-          </h3>
-          <div className="space-y-1">
-            {section.items.map((item) => {
-              const isActive = location.pathname === item.href || location.pathname.startsWith(`${item.href}/`)
-              return (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-4 px-4 py-3 mx-2 rounded-xl text-sm font-medium transition-colors ${
-                    isActive
-                      ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/50 shadow-inner'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  <span>{item.name}</span>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#0B1121] text-slate-100 font-sans antialiased selection:bg-emerald-500/30 flex-col md:flex-row">
 
@@ -101,7 +114,7 @@ export const AdminLayout: React.FC = () => {
 
         {/* Nav */}
         <nav className="flex-1 overflow-y-auto no-scrollbar pb-6">
-          <NavContent />
+          <NavContent sections={sections} pathname={location.pathname} onItemClick={() => {}} />
         </nav>
 
         {/* User + Logout (Bottom) */}
@@ -146,7 +159,7 @@ export const AdminLayout: React.FC = () => {
       {mobileOpen && (
         <div className="md:hidden fixed inset-0 z-20 pt-16 bg-[#111827] flex flex-col overflow-y-auto">
           <nav className="flex-1 py-6">
-            <NavContent />
+            <NavContent sections={sections} pathname={location.pathname} onItemClick={() => setMobileOpen(false)} />
           </nav>
           <div className="p-4 border-t border-slate-800">
              <button

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, RefreshCw, Trash2, UserCheck, UserX } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface AlertDialogProps {
   isOpen: boolean;

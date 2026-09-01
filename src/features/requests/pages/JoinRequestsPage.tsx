@@ -11,11 +11,16 @@ export function JoinRequestsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    let ignore = false;
     adminRepo.getJoinRequests({ search, status, page, pageSize: 8 }).then((res) => {
-      setData(res);
-      setLoading(false);
+      if (!ignore) {
+        setData(res);
+        setLoading(false);
+      }
     });
+    return () => {
+      ignore = true;
+    };
   }, [search, status, page]);
 
   return (
@@ -31,7 +36,7 @@ export function JoinRequestsPage() {
           <input
             type="text"
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            onChange={(e) => { setLoading(true); setSearch(e.target.value); setPage(1); }}
             placeholder={AppStrings.JoinRequests.searchPlaceholder}
             className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
           />
@@ -40,7 +45,7 @@ export function JoinRequestsPage() {
         <div className="relative">
           <select
             value={status}
-            onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+            onChange={(e) => { setLoading(true); setStatus(e.target.value); setPage(1); }}
             className="w-full sm:w-auto appearance-none bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
           >
             <option value="all">{AppStrings.JoinRequests.filters.all}</option>

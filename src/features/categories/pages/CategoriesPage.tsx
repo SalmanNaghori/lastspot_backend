@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, ToggleRight, ToggleLeft, RefreshCw } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { AppStrings } from '@/core/constants/app_strings';
 import { useToast } from '@/app/providers/ToastProvider';
@@ -19,16 +19,24 @@ export function CategoriesPage() {
     is_active: true,
   });
 
-  const loadCats = () => {
+  const loadCats = async () => {
     setLoading(true);
-    adminRepo.getCategories().then((res) => {
-      setCategories(res);
-      setLoading(false);
-    });
+    const res = await adminRepo.getCategories();
+    setCategories(res);
+    setLoading(false);
   };
 
   useEffect(() => {
-    loadCats();
+    let ignore = false;
+    adminRepo.getCategories().then((res) => {
+      if (!ignore) {
+        setCategories(res);
+        setLoading(false);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -36,7 +36,27 @@ export function UserDetailsPage() {
   };
 
   useEffect(() => {
-    loadUser();
+    let ignore = false;
+    if (!id) {
+      return;
+    }
+    adminRepo.getUserById(id).then((u) => {
+      if (ignore) return;
+      if (!u) {
+        setError("User not found");
+      } else {
+        setUser(u);
+      }
+      setLoading(false);
+    }).catch((err: any) => {
+      if (ignore) return;
+      setError(err.message || 'Failed to load user details');
+      setLoading(false);
+    });
+
+    return () => {
+      ignore = true;
+    };
   }, [id]);
 
   if (loading) {

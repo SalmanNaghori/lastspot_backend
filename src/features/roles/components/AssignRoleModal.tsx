@@ -19,8 +19,7 @@ export function AssignRoleModal({ isOpen, onClose, onAssigned, showToast }: Assi
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!searchQuery) {
-      setSearchResults([]);
+    if (!searchQuery.trim()) {
       return;
     }
     const delayDebounceFn = setTimeout(async () => {
@@ -46,7 +45,7 @@ export function AssignRoleModal({ isOpen, onClose, onAssigned, showToast }: Assi
       showToast(AppStrings.AdminRoles.alerts.assigned, 'success');
       onAssigned();
       onClose();
-    } catch (err) {
+    } catch {
       showToast('Failed to assign role.', 'error');
     } finally {
       setSubmitting(false);
@@ -74,7 +73,11 @@ export function AssignRoleModal({ isOpen, onClose, onAssigned, showToast }: Assi
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    const q = e.target.value;
+                    setSearchQuery(q);
+                    if (!q.trim()) setSearchResults([]);
+                  }}
                   placeholder={AppStrings.AdminRoles.modal.searchPlaceholder}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500"
                 />

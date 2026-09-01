@@ -5,24 +5,31 @@ import { AppStrings } from '@/core/constants/app_strings';
 import { useToast } from '@/app/providers/ToastProvider';
 
 export function ReportsPage() {
+  const { showToast } = useToast();
   const [status, setStatus] = useState('all');
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ reports: [] as any[], total: 0, totalPages: 1 });
   const [loading, setLoading] = useState(true);
 
-  const loadReports = () => {
+  const loadReports = async () => {
     setLoading(true);
-    adminRepo.getReports({ status, page, pageSize: 8 }).then((res) => {
-      setData(res);
-      setLoading(false);
-    });
+    const res = await adminRepo.getReports({ status, page, pageSize: 8 });
+    setData(res);
+    setLoading(false);
   };
 
   useEffect(() => {
-    loadReports();
+    let ignore = false;
+    adminRepo.getReports({ status, page, pageSize: 8 }).then((res) => {
+      if (!ignore) {
+        setData(res);
+        setLoading(false);
+      }
+    });
+    return () => {
+      ignore = true;
+    };
   }, [status, page]);
-
-  const { showToast } = useToast();
 
   const handleDismiss = async (id: string) => {
     await adminRepo.dismissReport(id);
@@ -47,7 +54,7 @@ export function ReportsPage() {
         {['all', 'open', 'resolved', 'dismissed'].map((st) => (
           <button
             key={st}
-            onClick={() => { setStatus(st); setPage(1); }}
+            onClick={() => { setLoading(true); setStatus(st); setPage(1); }}
             className={`px-3 py-1.5 rounded-xl text-xs font-medium capitalize transition-all ${
               status === st
                 ? 'bg-emerald-600 text-white'

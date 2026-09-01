@@ -16,14 +16,20 @@ export function DevicesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    let ignore = false;
     adminRepo.getDevices({ search, platformFilter, page, pageSize: 15 }).then((res) => {
-      setData(res);
-      setLoading(false);
+      if (!ignore) {
+        setData(res);
+        setLoading(false);
+      }
     });
+    return () => {
+      ignore = true;
+    };
   }, [search, platformFilter, page]);
 
   const updateParam = (key: string, value: string | null) => {
+    setLoading(true);
     const newParams = new URLSearchParams(searchParams);
     if (value) {
       newParams.set(key, value);
@@ -34,7 +40,10 @@ export function DevicesPage() {
     setSearchParams(newParams);
   };
 
-  const clearFilters = () => setSearchParams(new URLSearchParams());
+  const clearFilters = () => {
+    setLoading(true);
+    setSearchParams(new URLSearchParams());
+  };
   const hasFilters = search !== '' || platformFilter !== 'all';
 
   return (

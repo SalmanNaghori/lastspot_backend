@@ -18,19 +18,25 @@ export function UsersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    let ignore = false;
     // Transform deletedFilter into statusFilter for adminRepo logic, or update adminRepo to accept it explicitly.
     // In our adminRepo, if statusFilter === 'deleted', it checks deleted_at.
     // To strictly support separate ?deleted=true, we pass it down.
     const effectiveStatus = deletedFilter ? 'deleted' : statusFilter;
 
     adminRepo.getUsers({ search, statusFilter: effectiveStatus, page, pageSize: 8 }).then((res) => {
-      setData(res);
-      setLoading(false);
+      if (!ignore) {
+        setData(res);
+        setLoading(false);
+      }
     });
+    return () => {
+      ignore = true;
+    };
   }, [search, statusFilter, deletedFilter, page]);
 
   const updateParam = (key: string, value: string | null) => {
+    setLoading(true);
     const newParams = new URLSearchParams(searchParams);
     if (value) {
       newParams.set(key, value);
@@ -45,6 +51,7 @@ export function UsersPage() {
   };
 
   const clearFilters = () => {
+    setLoading(true);
     setSearchParams(new URLSearchParams());
   };
 
