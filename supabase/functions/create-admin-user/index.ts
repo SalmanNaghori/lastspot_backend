@@ -41,7 +41,6 @@ serve(async (req) => {
         id: authData.user.id,
         full_name,
         email,
-        role,
         status: 'active'
       })
 
@@ -49,6 +48,20 @@ serve(async (req) => {
       // Best effort to rollback auth user creation if profile fails
       await supabaseClient.auth.admin.deleteUser(authData.user.id)
       throw profileError
+    }
+
+    // 3. Add to user_roles
+    const { error: roleError } = await supabaseClient
+      .from('user_roles')
+      .insert({
+        user_id: authData.user.id,
+        role: role
+      })
+
+    if (roleError) {
+      // Best effort to rollback
+      await supabaseClient.auth.admin.deleteUser(authData.user.id)
+      throw roleError
     }
 
     return new Response(
