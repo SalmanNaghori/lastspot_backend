@@ -17,7 +17,7 @@ export const ProtectedRoute: React.FC = () => {
     return <Navigate to="/login" replace />
   }
 
-  if (role !== 'admin') {
+  if (role !== 'admin' && role !== 'moderator') {
     // If authenticated but not an admin, we can show an unauthorized page or redirect
     return (
       <div className="flex h-screen w-screen flex-col items-center justify-center bg-gray-50">
