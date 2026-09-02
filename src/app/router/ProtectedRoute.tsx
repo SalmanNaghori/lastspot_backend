@@ -3,7 +3,7 @@ import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '@/app/providers/AuthProvider'
 
 export const ProtectedRoute: React.FC = () => {
-  const { session, role, loading } = useAuth()
+  const { session, role, loading, signOut } = useAuth()
 
   if (loading) {
     return (
@@ -24,7 +24,7 @@ export const ProtectedRoute: React.FC = () => {
         <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
         <p className="text-gray-600 mb-4">You do not have permission to access the Admin Panel.</p>
         <button 
-          onClick={() => { /* sign out logic handles in component, or we provide a button here */ }}
+          onClick={async () => { await signOut(); window.location.href = '/login'; }}
           className="text-blue-500 hover:underline"
         >
            Please sign out and use an admin account.
