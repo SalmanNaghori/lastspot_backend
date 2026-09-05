@@ -46,7 +46,7 @@ export function AdminRolesPage() {
     }
   };
 
-  const adminCount = roles.filter(r => r.role === 'admin').length;
+  const adminCount = roles.filter(r => r.role === 'admin' || r.role === 'super_admin').length;
   const modCount = roles.filter(r => r.role === 'moderator').length;
   const totalStaff = roles.length;
 
@@ -158,7 +158,12 @@ export function AdminRolesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {r.role === 'admin' ? (
+                      {r.role === 'super_admin' ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          <ShieldAlert className="w-3.5 h-3.5" />
+                          Super Admin
+                        </span>
+                      ) : r.role === 'admin' ? (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
                           <ShieldAlert className="w-3.5 h-3.5" />
                           {AppStrings.AdminRoles.roles.admin}

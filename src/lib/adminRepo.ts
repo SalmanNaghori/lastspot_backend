@@ -158,7 +158,7 @@ class ComprehensiveAdminRepository {
           avatar_url,
           status
         )
-      `).in('role', ['admin', 'moderator']);
+      `).in('role', ['super_admin', 'admin', 'moderator']);
       if (error) throw error;
       return (data || []).map((r: any) => ({
         id: r.id,
