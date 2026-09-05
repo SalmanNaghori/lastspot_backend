@@ -24,7 +24,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   admin: [
     'view_dashboard', 'manage_users', 'manage_activities', 'manage_join_requests',
     'manage_reports', 'manage_chat', 'manage_cities', 'manage_categories',
-    'manage_notifications', 'manage_devices'
+    'manage_notifications', 'manage_devices', 'manage_admin_roles'
   ],
   moderator: [
     'view_dashboard', 'manage_users', 'manage_activities', 'manage_join_requests',
