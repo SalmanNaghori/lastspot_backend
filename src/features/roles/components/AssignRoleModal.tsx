@@ -14,7 +14,7 @@ export function AssignRoleModal({ isOpen, onClose, onAssigned, showToast }: Assi
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
-  const [role, setRole] = useState<'admin' | 'moderator'>('moderator');
+  const [role, setRole] = useState<'super_admin' | 'admin' | 'moderator'>('moderator');
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -136,8 +136,19 @@ export function AssignRoleModal({ isOpen, onClose, onAssigned, showToast }: Assi
             <label className="block text-xs text-slate-300 mb-2 font-semibold">
               {AppStrings.AdminRoles.modal.selectRoleLabel}
             </label>
-            <div className="grid grid-cols-2 gap-3">
-              <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-colors ${role === 'admin' ? 'bg-purple-500/10 border-purple-500/50 text-purple-400 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
+            <div className="grid grid-cols-3 gap-3">
+              <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-colors text-xs ${role === 'super_admin' ? 'bg-amber-500/10 border-amber-500/50 text-amber-400 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
+                <input 
+                  type="radio" 
+                  name="role" 
+                  value="super_admin" 
+                  checked={role === 'super_admin'} 
+                  onChange={() => setRole('super_admin')} 
+                  className="hidden"
+                />
+                Super Admin
+              </label>
+              <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-colors text-xs ${role === 'admin' ? 'bg-purple-500/10 border-purple-500/50 text-purple-400 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
                 <input 
                   type="radio" 
                   name="role" 
@@ -148,7 +159,7 @@ export function AssignRoleModal({ isOpen, onClose, onAssigned, showToast }: Assi
                 />
                 {AppStrings.AdminRoles.roles.admin}
               </label>
-              <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-colors ${role === 'moderator' ? 'bg-blue-500/10 border-blue-500/50 text-blue-400 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
+              <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-colors text-xs ${role === 'moderator' ? 'bg-blue-500/10 border-blue-500/50 text-blue-400 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
                 <input 
                   type="radio" 
                   name="role" 
