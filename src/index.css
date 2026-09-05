@@ -68,12 +68,15 @@ body {
   animation: toastBounceIn 2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-/* Fix browser autofill styling for dark mode */
-input:-webkit-autofill,
-input:-webkit-autofill:hover, 
-input:-webkit-autofill:focus, 
-input:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 30px #020617 inset !important;
-  -webkit-text-fill-color: #f8fafc !important;
-  transition: background-color 5000s ease-in-out 0s;
+@layer base {
+  /* Fix browser autofill styling for dark mode */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #020617 inset !important;
+    -webkit-text-fill-color: #f8fafc !important;
+    background-color: #020617 !important;
+    caret-color: white !important;
+  }
 }
