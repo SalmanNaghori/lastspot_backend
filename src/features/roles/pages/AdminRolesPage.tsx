@@ -5,6 +5,7 @@ import { Shield, ShieldAlert, Key, Users, Loader2, Trash2, UserPlus } from 'luci
 import { AssignRoleModal } from '../components/AssignRoleModal';
 import { CreateAdminModal } from '../components/CreateAdminModal';
 import { useToast } from '@/app/providers/ToastProvider';
+import { useRBAC } from '@/app/providers/useRBAC';
 
 export function AdminRolesPage() {
   const [roles, setRoles] = useState<any[]>([]);
@@ -12,6 +13,7 @@ export function AdminRolesPage() {
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const { showToast } = useToast();
+  const { isSuperAdmin } = useRBAC();
 
   const fetchRoles = async () => {
     setLoading(true);
@@ -59,22 +61,25 @@ export function AdminRolesPage() {
           </h1>
           <p className="text-sm text-slate-400 mt-1">{AppStrings.AdminRoles.subtitle}</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg"
-          >
-            <UserPlus className="w-4 h-4 text-emerald-400" />
-            Create New Admin
-          </button>
-          <button
-            onClick={() => setIsAssignModalOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-emerald-900/20"
-          >
-            <Key className="w-4 h-4" />
-            {AppStrings.AdminRoles.assignRoleBtn}
-          </button>
-        </div>
+        
+        {isSuperAdmin && (
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg"
+            >
+              <UserPlus className="w-4 h-4 text-emerald-400" />
+              Create New Admin
+            </button>
+            <button
+              onClick={() => setIsAssignModalOpen(true)}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-emerald-900/20"
+            >
+              <Key className="w-4 h-4" />
+              {AppStrings.AdminRoles.assignRoleBtn}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* KPI CARDS */}
@@ -169,13 +174,15 @@ export function AdminRolesPage() {
                       {new Date(r.assigned_at).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleRevoke(r.user?.id, r.role)}
-                        className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-colors inline-flex"
-                        title={AppStrings.AdminRoles.actions.revoke}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {isSuperAdmin && (
+                        <button
+                          onClick={() => handleRevoke(r.user?.id, r.role)}
+                          className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-colors inline-flex"
+                          title={AppStrings.AdminRoles.actions.revoke}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

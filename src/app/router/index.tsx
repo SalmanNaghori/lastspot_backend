@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { LoginPage } from '@/features/auth/pages/LoginPage'
+import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
+import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
 import { UsersPage } from '@/features/users/pages/UsersPage'
 import { UserDetailsPage } from '@/features/users/pages/UserDetailsPage'
@@ -11,6 +13,7 @@ import { RequestsPage } from '@/features/requests/pages/RequestsPage'
 import { RequestDetailsPage } from '@/features/requests/pages/RequestDetailsPage'
 import { JoinRequestsPage } from '@/features/requests/pages/JoinRequestsPage'
 import { CategoriesPage } from '@/features/categories/pages/CategoriesPage'
+import { CitiesPage } from '@/features/cities/pages/CitiesPage'
 import { NotificationsPage } from '@/features/notifications/pages/NotificationsPage'
 import { NotificationHistoryPage } from '@/features/notifications/pages/NotificationHistoryPage'
 import { ReportsPage } from '@/features/moderation/pages/ReportsPage'
@@ -29,6 +32,14 @@ export const router = createBrowserRouter(
       element: <LoginPage />,
     },
     {
+      path: '/forgot-password',
+      element: <ForgotPasswordPage />,
+    },
+    {
+      path: '/reset-password',
+      element: <ResetPasswordPage />,
+    },
+    {
       element: <ProtectedRoute />,
       children: [
         {
@@ -43,6 +54,7 @@ export const router = createBrowserRouter(
             { path: '/join-requests', element: <JoinRequestsPage /> },
 
             { path: '/categories', element: <CategoriesPage /> },
+            { path: '/cities', element: <CitiesPage /> },
 
             { path: '/notifications', element: <NotificationsPage /> },
             { path: '/notifications-history', element: <NotificationHistoryPage /> },

@@ -35,8 +35,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Enforce custom Remember Me logic
         const localSession = localStorage.getItem('activity_admin_session')
         const activeSession = sessionStorage.getItem('activity_admin_session')
+        
+        // Bypass custom logout logic if we are actively recovering a password
+        const isRecovery = window.location.hash.includes('type=recovery') || window.location.pathname.includes('/reset-password')
 
-        if (!localSession && !activeSession) {
+        if (!localSession && !activeSession && !isRecovery) {
           // If no custom session exists, but Supabase has a session,
           // it means Remember Me was false and the tab was closed.
           const { data } = await supabase.auth.getSession()

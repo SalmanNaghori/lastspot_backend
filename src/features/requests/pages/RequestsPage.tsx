@@ -11,9 +11,11 @@ export function RequestsPage() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [cityFilter, setCityFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [data, setData] = useState({ requests: [] as any[], total: 0, totalPages: 1 });
   const [categories, setCategories] = useState<any[]>([]);
+  const [cities, setCities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -35,18 +37,19 @@ export function RequestsPage() {
 
   const loadRequests = async () => {
     setLoading(true);
-    const res = await adminRepo.getRequests({ search, categoryId: categoryFilter, status: statusFilter, page, pageSize: 6 });
+    const res = await adminRepo.getRequests({ search, categoryId: categoryFilter, status: statusFilter, cityId: cityFilter, page, pageSize: 6 });
     setData(res);
     setLoading(false);
   };
 
   useEffect(() => {
     adminRepo.getCategories().then(setCategories);
+    adminRepo.getCities({ status: 'active', page: 1, pageSize: 100 }).then(res => setCities(res.cities || []));
   }, []);
 
   useEffect(() => {
     let ignore = false;
-    adminRepo.getRequests({ search, categoryId: categoryFilter, status: statusFilter, page, pageSize: 6 }).then((res) => {
+    adminRepo.getRequests({ search, categoryId: categoryFilter, status: statusFilter, cityId: cityFilter, page, pageSize: 6 }).then((res) => {
       if (!ignore) {
         setData(res);
         setLoading(false);
@@ -55,7 +58,7 @@ export function RequestsPage() {
     return () => {
       ignore = true;
     };
-  }, [search, categoryFilter, statusFilter, page]);
+  }, [search, categoryFilter, statusFilter, cityFilter, page]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +109,20 @@ export function RequestsPage() {
           >
             <option value="all">{AppStrings.Requests.filters.allCategories}</option>
             {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+        </div>
+
+        <div className="relative">
+          <select
+            value={cityFilter}
+            onChange={(e) => { setLoading(true); setCityFilter(e.target.value); setPage(1); }}
+            className="w-full sm:w-auto appearance-none bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+          >
+            <option value="all">All Cities</option>
+            {cities.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>

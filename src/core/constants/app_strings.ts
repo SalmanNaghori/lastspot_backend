@@ -15,6 +15,22 @@ export const AppStrings = {
       invalidCredentials: 'Invalid email or password. Please try again.',
       noPermission: 'This account does not have permission to access the Admin Panel.',
       unexpected: 'An unexpected error occurred. Please try again.'
+    },
+    forgotPassword: {
+      title: 'Reset Password',
+      subtitle: 'Enter your admin email to receive a recovery link.',
+      submitBtn: 'Send Recovery Link',
+      sending: 'Sending...',
+      success: 'Recovery link sent! Please check your email.',
+      backToLogin: 'Back to Login'
+    },
+    resetPassword: {
+      title: 'Set New Password',
+      subtitle: 'Enter a strong password for your admin account.',
+      submitBtn: 'Update Password',
+      updating: 'Updating...',
+      success: 'Password updated successfully! You can now log in.',
+      passwordMatchError: 'Passwords do not match.'
     }
   },
   Navigation: {
@@ -38,7 +54,8 @@ export const AppStrings = {
       notificationsHistory: 'Notification History',
       reports: 'Reports & Flagged',
       devices: 'Registered Devices',
-      settings: 'App Settings'
+      settings: 'App Settings',
+      cities: 'Cities'
     }
   },
   Dashboard: {
@@ -151,6 +168,73 @@ export const AppStrings = {
       nameRequired: 'Category name is required',
       saveSuccess: 'Category saved successfully!',
       statusUpdated: 'Category status updated'
+    }
+  },
+  Cities: {
+    title: 'Cities Management',
+    subtitle: 'Manage cities available in LastSpot.',
+    addCity: 'Add City',
+    loading: 'Loading cities...',
+    noData: 'No cities found.',
+    addFirstCity: 'Add your first city',
+    noSearchResults: 'No cities match your search.',
+    searchPlaceholder: 'Search cities...',
+    tabs: {
+      all: 'All',
+      active: 'Active',
+      inactive: 'Inactive'
+    },
+    stats: {
+      total: 'Total Cities',
+      active: 'Active Cities',
+      inactive: 'Inactive Cities'
+    },
+    tableHeaders: {
+      order: 'Order',
+      city: 'City',
+      state: 'State',
+      status: 'Status',
+      created: 'Created',
+      actions: 'Actions'
+    },
+    status: {
+      active: 'Active',
+      inactive: 'Inactive'
+    },
+    actions: {
+      edit: 'Edit',
+      activate: 'Activate',
+      deactivate: 'Deactivate'
+    },
+    modal: {
+      createTitle: 'Create City',
+      editTitle: 'Edit City',
+      nameLabel: 'City Name',
+      namePlaceholder: 'e.g. Ahmedabad',
+      stateLabel: 'State',
+      statePlaceholder: 'e.g. Gujarat',
+      orderLabel: 'Display Order',
+      isActiveLabel: 'City is active',
+      cancelBtn: 'Cancel',
+      createBtn: 'Create City',
+      updateBtn: 'Update City'
+    },
+    confirmDeactivate: {
+      title: 'Deactivate City',
+      message: (name: string) => `Are you sure you want to deactivate ${name}? Existing users and activities will not be deleted.`,
+      cancelBtn: 'Cancel',
+      confirmBtn: 'Deactivate'
+    },
+    confirmActivate: {
+      title: 'Activate City',
+      message: (name: string) => `Are you sure you want to activate ${name}?`,
+      cancelBtn: 'Cancel',
+      confirmBtn: 'Activate'
+    },
+    alerts: {
+      nameRequired: 'City name is required',
+      saveSuccess: 'City saved successfully!',
+      statusUpdated: 'City status updated'
     }
   },
   Users: {

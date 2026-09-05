@@ -8,7 +8,8 @@ export const ApiUrls = {
     joinRequests: 'join_requests',
     notifications: 'notifications',
     reports: 'reports',
-    appSettings: 'app_settings'
+    appSettings: 'app_settings',
+    cities: 'cities'
   },
   rpc: {
     searchUsersByEmail: 'search_users_by_email',

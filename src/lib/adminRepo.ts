@@ -126,6 +126,7 @@ class ComprehensiveAdminRepository {
       .from('user_devices')
       .select(`
         id,
+        user_id,
         device_name,
         platform,
         last_active,
@@ -250,7 +251,7 @@ class ComprehensiveAdminRepository {
   }
 
   // USERS
-  async getUsers({ search = '', statusFilter = 'all', page = 1, pageSize = 8 }: any) {
+  async getUsers({ search = '', statusFilter = 'all', cityId = 'all', page = 1, pageSize = 8 }: any) {
     try {
       let query = supabase
         .from('profiles')
@@ -283,6 +284,10 @@ class ComprehensiveAdminRepository {
         }
       }
 
+      if (cityId !== 'all') {
+        query = query.eq('city_id', cityId);
+      }
+
       const start = (page - 1) * pageSize;
       const { data, count, error } = await query.range(start, start + pageSize - 1);
       
@@ -305,7 +310,7 @@ class ComprehensiveAdminRepository {
       if (userError || !user) throw userError || new Error('User not found');
       
       const { data: devices } = await supabase.from(ApiUrls.tables.userDevices).select('*').eq('user_id', id);
-      const { data: roleData } = await supabase.from(ApiUrls.tables.userRoles).select('role').eq('user_id', id).single();
+      const { data: roleData } = await supabase.from(ApiUrls.tables.userRoles).select('role').eq('user_id', id).maybeSingle();
       
       return { ...user, devices: devices || [], role: roleData?.role || 'user' };
     } catch (error) {
@@ -431,7 +436,7 @@ class ComprehensiveAdminRepository {
   }
 
   // REQUESTS (POSTS)
-  async getRequests({ search = '', categoryId = 'all', status = 'all', page = 1, pageSize = 8 }: any) {
+  async getRequests({ search = '', categoryId = 'all', status = 'all', cityId = 'all', page = 1, pageSize = 8 }: any) {
     try {
       let query = supabase.from('requests').select(`
         id,
@@ -458,6 +463,7 @@ class ComprehensiveAdminRepository {
 
       if (categoryId !== 'all') query = query.eq('category_id', categoryId);
       if (status !== 'all') query = query.eq('status', status);
+      if (cityId !== 'all') query = query.eq('city_id', cityId);
 
       const start = (page - 1) * pageSize;
       const { data, count, error } = await query.range(start, start + pageSize - 1).order('created_at', { ascending: false });
@@ -498,8 +504,9 @@ class ComprehensiveAdminRepository {
     try {
       const { data: req, error: reqError } = await supabase.from(ApiUrls.tables.requests).select(`
         *,
-        profiles (*),
-        categories (name)
+        creator:profiles (full_name, avatar_url, email),
+        categories (name),
+        cities (name)
       `).eq('id', id).single();
 
       if (reqError || !req) throw reqError || new Error('Request not found');
@@ -517,7 +524,11 @@ class ComprehensiveAdminRepository {
 
       return {
         ...req,
+        creator: req.creator,
+        location: req.location_name,
+        required_people: req.max_participants,
         category_name: req.categories?.name || 'General',
+        city_name: req.cities?.name || '',
         join_requests: applicants
       };
     } catch (error) {
@@ -528,11 +539,22 @@ class ComprehensiveAdminRepository {
 
   async saveRequest(data: any) {
     try {
-      if (data.id) {
-        const { error } = await supabase.from(ApiUrls.tables.requests).update({ ...data, updated_at: new Date().toISOString() }).eq('id', data.id);
+      // Map backoffice form fields to database schema
+      const payload = {
+        ...data,
+        location_name: data.location,
+        max_participants: data.required_people,
+      };
+      
+      // Remove the UI-only fields so Supabase doesn't complain if they don't exist
+      delete payload.location;
+      delete payload.required_people;
+
+      if (payload.id) {
+        const { error } = await supabase.from(ApiUrls.tables.requests).update({ ...payload, updated_at: new Date().toISOString() }).eq('id', payload.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from(ApiUrls.tables.requests).insert([data]);
+        const { error } = await supabase.from(ApiUrls.tables.requests).insert([payload]);
         if (error) throw error;
       }
     } catch (error) {
@@ -737,6 +759,96 @@ class ComprehensiveAdminRepository {
     } catch (error) {
       console.error('Error in getDevices:', error);
       return { devices: [], total: 0, totalPages: 1 };
+    }
+  }
+  // CITIES
+  async getCities({ search = '', status = 'all', page = 1, pageSize = 20 }: any) {
+    try {
+      let query = supabase.from(ApiUrls.tables.cities).select('*', { count: 'exact' });
+
+      if (status === 'active') query = query.eq('is_active', true);
+      if (status === 'inactive') query = query.eq('is_active', false);
+
+      const start = (page - 1) * pageSize;
+      const { data, count, error } = await query.range(start, start + pageSize - 1).order('display_order', { ascending: true });
+      
+      if (error) throw error;
+
+      let formattedData = data || [];
+      
+      // Client-side search if needed (Supabase also supports .ilike but we match existing pattern)
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        formattedData = formattedData.filter((c: any) => c.name.toLowerCase().includes(q));
+      }
+
+      return { 
+        cities: formattedData, 
+        total: count || 0, 
+        totalPages: Math.ceil((count || 0) / pageSize) || 1 
+      };
+    } catch (error) {
+      console.error('Error in getCities:', error);
+      return { cities: [], total: 0, totalPages: 1 };
+    }
+  }
+
+  async getCitiesStats() {
+    try {
+      const [
+        { count: total },
+        { count: active },
+        { count: inactive }
+      ] = await Promise.all([
+        supabase.from(ApiUrls.tables.cities).select('*', { count: 'exact', head: true }),
+        supabase.from(ApiUrls.tables.cities).select('*', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from(ApiUrls.tables.cities).select('*', { count: 'exact', head: true }).eq('is_active', false)
+      ]);
+      return {
+        total: total || 0,
+        active: active || 0,
+        inactive: inactive || 0
+      };
+    } catch (error) {
+      console.error('Error in getCitiesStats:', error);
+      return { total: 0, active: 0, inactive: 0 };
+    }
+  }
+
+  async saveCity(data: any) {
+    try {
+      const payload = {
+        name: data.name,
+        state: data.state || null,
+        is_active: data.is_active !== undefined ? data.is_active : true,
+        display_order: data.display_order || 999,
+        updated_at: new Date().toISOString()
+      };
+
+      if (data.id) {
+        const { error } = await supabase.from(ApiUrls.tables.cities).update(payload).eq('id', data.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from(ApiUrls.tables.cities).insert([payload]);
+        if (error) throw error;
+      }
+    } catch (error) {
+      console.error('Error in saveCity:', error);
+      throw error;
+    }
+  }
+
+  async toggleCityStatus(id: string, isActive: boolean) {
+    try {
+      const { error } = await supabase.from(ApiUrls.tables.cities).update({ 
+        is_active: isActive,
+        updated_at: new Date().toISOString()
+      }).eq('id', id);
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error in toggleCityStatus:', error);
+      throw error;
     }
   }
 }

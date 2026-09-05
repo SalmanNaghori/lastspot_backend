@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Layers, Users, Smartphone, Settings, LogOut, Activity, Menu, X, FileText, UserPlus, Tag, Bell, History, Flag, ShieldAlert } from 'lucide-react'
+import { Layers, Users, Smartphone, Settings, LogOut, Activity, Menu, X, FileText, UserPlus, Tag, Bell, History, Flag, ShieldAlert, MapPin } from 'lucide-react'
 import { useAuth } from '@/app/providers/AuthProvider'
+import { useRBAC } from '@/app/providers/useRBAC'
 import { useToast } from '@/app/providers/ToastProvider'
 import { AppStrings } from '@/core/constants/app_strings'
 
@@ -52,6 +53,7 @@ const NavContent: React.FC<NavContentProps> = ({ sections, pathname, onItemClick
 
 export const AdminLayout: React.FC = () => {
   const { user, signOut } = useAuth()
+  const { can } = useRBAC()
   const { showToast } = useToast()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -65,35 +67,41 @@ export const AdminLayout: React.FC = () => {
     {
       title: AppStrings.Navigation.groups.main,
       items: [
-        { name: AppStrings.Navigation.items.dashboard, href: '/dashboard', icon: Layers },
-        { name: AppStrings.Navigation.items.users, href: '/users', icon: Users },
-        { name: AppStrings.Navigation.items.requests, href: '/requests', icon: FileText },
-        { name: AppStrings.Navigation.items.joinRequests, href: '/join-requests', icon: UserPlus },
-        { name: AppStrings.Navigation.items.categories, href: '/categories', icon: Tag },
+        { name: AppStrings.Navigation.items.dashboard, href: '/dashboard', icon: Layers, permission: 'view_dashboard' },
+        { name: AppStrings.Navigation.items.users, href: '/users', icon: Users, permission: 'manage_users' },
+        { name: AppStrings.Navigation.items.requests, href: '/requests', icon: FileText, permission: 'manage_activities' },
+        { name: AppStrings.Navigation.items.joinRequests, href: '/join-requests', icon: UserPlus, permission: 'manage_join_requests' },
+        { name: AppStrings.Navigation.items.categories, href: '/categories', icon: Tag, permission: 'manage_categories' },
       ]
     },
     {
       title: AppStrings.Navigation.groups.communication,
       items: [
-        { name: AppStrings.Navigation.items.notifications, href: '/notifications', icon: Bell },
-        { name: AppStrings.Navigation.items.notificationsHistory, href: '/notifications-history', icon: History },
+        { name: AppStrings.Navigation.items.notifications, href: '/notifications', icon: Bell, permission: 'manage_notifications' },
+        { name: AppStrings.Navigation.items.notificationsHistory, href: '/notifications-history', icon: History, permission: 'manage_notifications' },
       ]
     },
     {
       title: AppStrings.Navigation.groups.moderation,
       items: [
-        { name: AppStrings.Navigation.items.reports, href: '/reports', icon: Flag },
+        { name: AppStrings.Navigation.items.reports, href: '/reports', icon: Flag, permission: 'manage_reports' },
       ]
     },
     {
       title: AppStrings.Navigation.groups.system,
       items: [
-        { name: AppStrings.Navigation.items.devices, href: '/devices', icon: Smartphone },
-        { name: 'Admin Roles', href: '/roles', icon: ShieldAlert },
-        { name: AppStrings.Navigation.items.settings, href: '/app-settings', icon: Settings },
+        { name: AppStrings.Navigation.items.devices, href: '/devices', icon: Smartphone, permission: 'manage_devices' },
+        { name: 'Admin Roles', href: '/roles', icon: ShieldAlert, permission: 'manage_admin_roles' },
+        { name: AppStrings.Navigation.items.cities, href: '/cities', icon: MapPin, permission: 'manage_cities' },
+        { name: AppStrings.Navigation.items.settings, href: '/app-settings', icon: Settings, permission: 'manage_settings' },
       ]
     }
   ]
+  .map(section => ({
+    ...section,
+    items: section.items.filter(item => can(item.permission as any))
+  }))
+  .filter(section => section.items.length > 0);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#0B1121] text-slate-100 font-sans antialiased selection:bg-emerald-500/30 flex-col md:flex-row">

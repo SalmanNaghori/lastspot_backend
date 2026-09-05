@@ -69,9 +69,25 @@ export function RequestDetailsPage() {
             </span>
           </div>
           <h1 className="text-xl font-bold text-slate-100 mt-2">{request.title}</h1>
-          <p className="text-xs text-slate-400 flex items-center gap-2 mt-1">
-            <MapPin className="w-3.5 h-3.5 text-emerald-400" /> {request.location}
-          </p>
+          <div className="flex flex-wrap items-center gap-3 mt-2">
+            {request.city_name && (
+              <span className="text-xs text-slate-300 flex items-center gap-1.5 bg-slate-800 px-2 py-1 rounded-md">
+                <MapPin className="w-3 h-3 text-emerald-400" /> 
+                {request.city_name}
+              </span>
+            )}
+            {request.location && (
+              <a 
+                href={request.location.startsWith('http') ? request.location : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(request.location)}`}
+                target="_blank" 
+                rel="noreferrer"
+                className="text-xs text-emerald-400 hover:text-emerald-300 hover:underline flex items-center gap-1.5 bg-emerald-500/10 px-2 py-1 rounded-md"
+              >
+                <MapPin className="w-3 h-3" /> 
+                <span className="truncate max-w-[250px]" title={request.location}>{request.location}</span>
+              </a>
+            )}
+          </div>
         </div>
 
         {/* ADMIN ACTION BADGES */}

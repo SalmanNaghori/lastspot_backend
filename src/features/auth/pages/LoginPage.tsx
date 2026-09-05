@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '@/core/supabase/client'
 import { useAuth } from '@/app/providers/AuthProvider'
 import { Eye, EyeOff, Loader2, Shield } from 'lucide-react'
@@ -196,7 +196,7 @@ export const LoginPage: React.FC = () => {
             )}
           </div>
 
-          {/* Remember Me Checkbox */}
+          {/* Remember Me Checkbox & Forgot Password */}
           <div className="flex items-center justify-between text-sm pt-1">
             <label className="flex items-center gap-2 text-slate-300 cursor-pointer select-none">
               <input
@@ -207,6 +207,12 @@ export const LoginPage: React.FC = () => {
               />
               <span>Remember me</span>
             </label>
+            <Link 
+              to="/forgot-password" 
+              className="text-emerald-500 hover:text-emerald-400 transition-colors font-medium"
+            >
+              Forgot Password?
+            </Link>
           </div>
 
           {error && (

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, RefreshCw, XCircle } from 'lucide-react';
+import { Search, RefreshCw, XCircle, ChevronDown } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppStrings } from '@/core/constants/app_strings';
@@ -11,11 +11,19 @@ export function UsersPage() {
   // Read URL params
   const search = searchParams.get('search') || '';
   const statusFilter = searchParams.get('status') || 'all';
+  const cityFilter = searchParams.get('city') || 'all';
   const deletedFilter = searchParams.get('deleted') === 'true';
   const page = parseInt(searchParams.get('page') || '1', 10);
 
   const [data, setData] = useState({ users: [] as any[], total: 0, totalPages: 1 });
+  const [cities, setCities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    adminRepo.getCities({ status: 'active', page: 1, pageSize: 100 }).then((res) => {
+      setCities(res.cities || []);
+    });
+  }, []);
 
   useEffect(() => {
     let ignore = false;
@@ -24,7 +32,7 @@ export function UsersPage() {
     // To strictly support separate ?deleted=true, we pass it down.
     const effectiveStatus = deletedFilter ? 'deleted' : statusFilter;
 
-    adminRepo.getUsers({ search, statusFilter: effectiveStatus, page, pageSize: 8 }).then((res) => {
+    adminRepo.getUsers({ search, statusFilter: effectiveStatus, cityId: cityFilter, page, pageSize: 8 }).then((res) => {
       if (!ignore) {
         setData(res);
         setLoading(false);
@@ -50,12 +58,13 @@ export function UsersPage() {
     setSearchParams(newParams);
   };
 
+  const hasFilters = search !== '' || statusFilter !== 'all' || deletedFilter || cityFilter !== 'all';
+
   const clearFilters = () => {
     setLoading(true);
     setSearchParams(new URLSearchParams());
   };
 
-  const hasFilters = search !== '' || statusFilter !== 'all' || deletedFilter;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto pb-10">
@@ -84,6 +93,20 @@ export function UsersPage() {
             placeholder={AppStrings.Users.searchPlaceholder}
             className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500 transition-colors"
           />
+        </div>
+
+        <div className="relative">
+          <select
+            value={cityFilter}
+            onChange={(e) => updateParam('city', e.target.value === 'all' ? null : e.target.value)}
+            className="w-full sm:w-auto appearance-none bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2 text-sm text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+          >
+            <option value="all">All Cities</option>
+            {cities.map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+          <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar">
