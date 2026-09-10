@@ -91,7 +91,7 @@ export const LoginPage: React.FC = () => {
         .eq('user_id', userId)
         .single()
 
-      if (roleError || !roleData || !['admin', 'moderator'].includes(roleData.role)) {
+      if (roleError || !roleData || !['super_admin', 'admin', 'moderator'].includes(roleData.role)) {
         await supabase.auth.signOut()
         showToast('Access Denied: Your account does not have Admin or Moderator privileges.', 'error')
         return
