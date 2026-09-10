@@ -127,15 +127,19 @@ class ComprehensiveAdminRepository {
       .select(`
         id,
         user_id,
-        device_name,
+        device_identifier,
         platform,
-        last_active,
+        device_model,
+        os_version,
+        app_version,
+        build_number,
+        last_active_at,
         profiles (
           full_name,
           email
         )
       `)
-      .order('last_active', { ascending: false })
+      .order('last_active_at', { ascending: false })
       .limit(limit);
     if (error) {
       console.error('Error in getRecentDevices:', error);
@@ -702,7 +706,7 @@ class ComprehensiveAdminRepository {
   // DEVICES
   async getDevices({ search = '', platformFilter = 'all', page = 1, pageSize = 8 }: any) {
     try {
-      let query = supabase.from(ApiUrls.tables.userDevices).select('*', { count: 'exact' });
+      let query = supabase.from(ApiUrls.tables.userDevices).select('id, user_id, device_identifier, platform, device_model, os_version, app_version, build_number, last_active_at', { count: 'exact' });
 
       if (platformFilter !== 'all') {
         query = query.ilike('platform', `%${platformFilter}%`);
@@ -747,7 +751,11 @@ class ComprehensiveAdminRepository {
         const q = search.toLowerCase();
         formattedData = formattedData.filter((d: any) => 
           (d.device_model && d.device_model.toLowerCase().includes(q)) || 
-          (d.user_name && d.user_name.toLowerCase().includes(q))
+          (d.user_name && d.user_name.toLowerCase().includes(q)) ||
+          (d.user_email && d.user_email.toLowerCase().includes(q)) ||
+          (d.platform && d.platform.toLowerCase().includes(q)) ||
+          (d.app_version && d.app_version.toLowerCase().includes(q)) ||
+          (d.device_identifier && d.device_identifier.toLowerCase().includes(q))
         );
       }
 
