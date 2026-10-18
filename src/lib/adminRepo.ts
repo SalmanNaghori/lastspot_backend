@@ -1,5 +1,6 @@
 import { supabase } from '@/core/supabase/client'
 import { ApiUrls } from '@/core/constants/api_urls'
+import { fetchUserDevices } from '@/features/devices/api/devices'
 
 class ComprehensiveAdminRepository {
 
@@ -309,14 +310,17 @@ class ComprehensiveAdminRepository {
       const { data: user, error: userError } = await supabase.from(ApiUrls.tables.profiles).select('*').eq('id', id).single();
       if (userError || !user) throw userError || new Error('User not found');
       
-      const { data: devices } = await supabase.from(ApiUrls.tables.userDevices).select('*').eq('user_id', id);
       const { data: roleData } = await supabase.from(ApiUrls.tables.userRoles).select('role').eq('user_id', id).maybeSingle();
       
-      return { ...user, devices: devices || [], role: roleData?.role || 'user' };
+      return { ...user, role: roleData?.role || 'user' };
     } catch (error) {
       console.error('Error in getUserById:', error);
       return null;
     }
+  }
+
+  async getUserDevices(id: string) {
+    return await fetchUserDevices(id);
   }
 
   async activateUser(id: string) {
@@ -702,7 +706,9 @@ class ComprehensiveAdminRepository {
   // DEVICES
   async getDevices({ search = '', platformFilter = 'all', page = 1, pageSize = 8 }: any) {
     try {
-      let query = supabase.from(ApiUrls.tables.userDevices).select('*', { count: 'exact' });
+      let query = supabase
+        .from(ApiUrls.tables.userDevices)
+        .select('id, user_id, device_model, platform, app_version, os_version, build_number, last_active_at, is_active, created_at', { count: 'exact' });
 
       if (platformFilter !== 'all') {
         query = query.ilike('platform', `%${platformFilter}%`);
