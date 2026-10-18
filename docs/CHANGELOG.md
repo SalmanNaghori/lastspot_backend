@@ -4,6 +4,22 @@ All notable changes to the KhelBhai Admin Panel will be documented in this file.
 
 ---
 
+## [1.0.1] — 2026-10-19
+
+### 🛡️ User Data & Device Consistency Engine
+- **Intermittent Device Retrieval Resolution**:
+  - Implemented multi-tier resilient device retrieval in `devices.ts` (`get-user-devices` Edge Function -> `get_user_devices_for_admin` RPC -> direct PostgREST with RLS fallback).
+  - Resolved 0-device masking: Added distinct UI and API states (`loading`, `success with data`, `success with 0 records`, `error with retry`).
+  - Added safe, structured diagnostic telemetry (`generateRequestId`, `logDiagnostic`) tracking endpoint, latency, query count, status code, and environment without logging secrets or FCM tokens.
+- **Older & Existing User Profile Data Completeness**:
+  - Created `get-user-details` Supabase Edge Function with secure `auth.users` fallback for email and phone.
+  - Added PostgreSQL migration `20261019000000_user_data_and_device_consistency.sql` introducing admin RLS policies and `get_user_details_for_admin` RPC.
+  - Linked `public.cities` relation to resolve `city` name and `state` for accounts with legacy or foreign-key-only location fields.
+  - Enhanced `UserDetailsPage.tsx` with a Comprehensive Profile Specifications card displaying all available attributes, copy-to-clipboard helpers, and clear "Not provided" fallbacks for genuinely absent data.
+  - Decoupled user profile and device retrieval via `Promise.allSettled`, eliminating race conditions and avoiding React 19 compiler cascading render warnings.
+
+---
+
 ## [1.0.0] — 2026-10-18
 
 ### 🎨 Rebranding & Visual Identity

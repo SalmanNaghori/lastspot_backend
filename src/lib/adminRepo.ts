@@ -1,6 +1,7 @@
 import { supabase } from '@/core/supabase/client'
 import { ApiUrls } from '@/core/constants/api_urls'
 import { fetchUserDevices } from '@/features/devices/api/devices'
+import { generateRequestId, logDiagnostic } from '@/core/utils/diagnosticLogger'
 
 class ComprehensiveAdminRepository {
 
@@ -263,21 +264,25 @@ class ComprehensiveAdminRepository {
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
-      const q = search.trim().toLowerCase();
+      const q = search.trim();
       
-      // Email Search via RPC (fallback to full_name if not RPC)
       if (q) {
         if (q.includes('@')) {
-          const { data, error } = await supabase.rpc(ApiUrls.rpc.searchUsersByEmail, { search_term: q });
-          if (!error && data) {
-             return {
-               users: data,
-               total: data.length,
-               totalPages: 1
-             }
+          try {
+            const { data, error } = await supabase.rpc(ApiUrls.rpc.searchUsersByEmail, { search_term: q.toLowerCase() });
+            if (!error && Array.isArray(data) && data.length > 0) {
+              return {
+                users: data,
+                total: data.length,
+                totalPages: 1
+              };
+            }
+          } catch {
+            // RPC unavailable; fallback to direct PostgREST filter
           }
+          query = query.or(`email.ilike.%${q}%,full_name.ilike.%${q}%`);
         } else {
-          query = query.ilike('full_name', `%${q}%`);
+          query = query.or(`full_name.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`);
         }
       }
 
@@ -310,14 +315,117 @@ class ComprehensiveAdminRepository {
   }
 
   async getUserById(id: string) {
+    if (!id) return null;
+    const cleanId = id.trim();
+    const requestId = generateRequestId();
+    const startTime = performance.now();
+    const environment = import.meta.env.MODE || 'production';
+
+    // 1. Primary Strategy: Secure Edge Function get-user-details (resolves auth.users email/phone & cities)
     try {
-      const { data: user, error: userError } = await supabase.from(ApiUrls.tables.profiles).select('*').eq('id', id).single();
-      if (userError || !user) throw userError || new Error('User not found');
-      
-      const { data: roleData } = await supabase.from(ApiUrls.tables.userRoles).select('role').eq('user_id', id).maybeSingle();
-      
-      return { ...user, role: roleData?.role || 'user' };
-    } catch (error) {
+      const { data: efData, error: efError } = await supabase.functions.invoke('get-user-details', {
+        body: { userId: cleanId }
+      });
+
+      if (!efError && efData?.user) {
+        logDiagnostic({
+          requestId,
+          selectedUserId: cleanId,
+          endpoint: 'edge_function:get-user-details',
+          httpStatus: 200,
+          durationMs: Math.round(performance.now() - startTime),
+          environment
+        });
+        return efData.user;
+      }
+    } catch {
+      // Proceed to secondary strategy
+    }
+
+    // 2. Secondary Strategy: Secure RPC get_user_details_for_admin (SECURITY DEFINER)
+    try {
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_details_for_admin', {
+        target_user_id: cleanId
+      });
+
+      if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
+        logDiagnostic({
+          requestId,
+          selectedUserId: cleanId,
+          endpoint: 'rpc:get_user_details_for_admin',
+          httpStatus: 200,
+          durationMs: Math.round(performance.now() - startTime),
+          environment
+        });
+        return rpcData[0];
+      }
+    } catch {
+      // Proceed to tertiary strategy
+    }
+
+    // 3. Tertiary Strategy: Direct PostgREST query on public.profiles + city resolution
+    try {
+      const { data: user, error: userError } = await supabase
+        .from(ApiUrls.tables.profiles)
+        .select('*')
+        .eq('id', cleanId)
+        .maybeSingle();
+
+      if (userError) throw userError;
+      if (!user) return null;
+
+      // Resolve City & State if city_id is present
+      let cityName = user.city || null;
+      let stateName: string | null = null;
+      if (user.city_id) {
+        try {
+          const { data: cityData } = await supabase
+            .from('cities')
+            .select('name, state')
+            .eq('id', user.city_id)
+            .maybeSingle();
+
+          if (cityData) {
+            cityName = cityData.name || cityName;
+            stateName = cityData.state || null;
+          }
+        } catch {
+          // Keep existing city
+        }
+      }
+
+      const { data: roleData } = await supabase
+        .from(ApiUrls.tables.userRoles)
+        .select('role')
+        .eq('user_id', cleanId)
+        .maybeSingle();
+
+      logDiagnostic({
+        requestId,
+        selectedUserId: cleanId,
+        endpoint: 'postgrest:profiles',
+        httpStatus: 200,
+        durationMs: Math.round(performance.now() - startTime),
+        environment
+      });
+
+      return { 
+        ...user, 
+        city: cityName,
+        state: stateName,
+        country: 'India',
+        role: roleData?.role || 'user' 
+      };
+    } catch (error: any) {
+      logDiagnostic({
+        requestId,
+        selectedUserId: cleanId,
+        endpoint: 'getUserById:failed',
+        errorCode: error?.code || 'FETCH_ERROR',
+        errorMessage: error?.message,
+        durationMs: Math.round(performance.now() - startTime),
+        environment
+      });
       console.error('Error in getUserById:', error);
       return null;
     }
@@ -733,7 +841,7 @@ class ComprehensiveAdminRepository {
       if (userIds.length > 0) {
         const { data: profiles, error: profileError } = await supabase
           .from('profiles')
-          .select('id, full_name, email, avatar_url')
+          .select('id, full_name, email, phone, avatar_url')
           .in('id', userIds);
         
         if (profileError) throw profileError;
@@ -750,7 +858,7 @@ class ComprehensiveAdminRepository {
         ...d,
         user_name: profilesMap[d.user_id]?.full_name || 'Unknown',
         user_avatar: profilesMap[d.user_id]?.avatar_url || '',
-        user_email: profilesMap[d.user_id]?.email || ''
+        user_email: profilesMap[d.user_id]?.email || profilesMap[d.user_id]?.phone || ''
       }));
 
       if (search.trim()) {

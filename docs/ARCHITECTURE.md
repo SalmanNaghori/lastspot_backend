@@ -382,3 +382,73 @@ erDiagram
         timestamp created_at
     }
 ```
+
+---
+
+## 8. User Details & Device Telemetry Data Flow
+
+```mermaid
+flowchart TD
+    subgraph UI["Admin UI Layer (UserDetailsPage.tsx)"]
+        Nav["Route: /users/:id"]
+        Effect["useEffect (Promise.allSettled)"]
+        UserState["user Profile State"]
+        DevState["devicesData State"]
+        ErrState["devicesError State with Retry"]
+    end
+
+    subgraph DAL["Data Access Layer (adminRepo.ts & devices.ts)"]
+        GetUser["adminRepo.getUserById(id)"]
+        GetDevs["adminRepo.getUserDevices(id)"]
+        Diag["logDiagnostic(requestId, durationMs, status)"]
+    end
+
+    subgraph Tier1["Primary: Edge Functions"]
+        EFDetails["supabase.functions.invoke('get-user-details')"]
+        EFDevs["supabase.functions.invoke('get-user-devices')"]
+    end
+
+    subgraph Tier2["Secondary: Security Definer RPCs"]
+        RPCDetails["RPC: get_user_details_for_admin(target_user_id)"]
+        RPCDevs["RPC: get_user_devices_for_admin(target_user_id)"]
+    end
+
+    subgraph Tier3["Tertiary: Direct PostgREST Client"]
+        PGProfiles["public.profiles.select('*').eq('id', id)"]
+        PGCities["public.cities.select('name, state').eq('id', city_id)"]
+        PGRoles["public.user_roles.select('role').eq('user_id', id)"]
+        PGDevs["public.user_devices.select('*').eq('user_id', id)"]
+    end
+
+    subgraph Storage["Supabase Infrastructure"]
+        AuthUsers[("auth.users (Email & Phone fallback)")]
+        DBProfiles[("public.profiles")]
+        DBCities[("public.cities")]
+        DBDevs[("public.user_devices (All records)")]
+        DBRoles[("public.user_roles")]
+    end
+
+    Nav --> Effect
+    Effect --> GetUser & GetDevs
+    GetUser --> EFDetails
+    GetDevs --> EFDevs
+
+    EFDetails -.->|Fallback if 404 / error| RPCDetails
+    RPCDetails -.->|Fallback if PGRST202| PGProfiles
+    PGProfiles --> PGCities & PGRoles
+
+    EFDevs -.->|Fallback if 404 / error| RPCDevs
+    RPCDevs -.->|Fallback if PGRST202| PGDevs
+
+    EFDetails --> AuthUsers & DBProfiles & DBCities & DBDevs & DBRoles
+    RPCDetails --> AuthUsers & DBProfiles & DBCities & DBRoles
+    PGProfiles --> DBProfiles
+    PGCities --> DBCities
+    PGRoles --> DBRoles
+    PGDevs --> DBDevs
+
+    GetUser --> Diag --> UserState
+    GetDevs --> Diag --> DevState
+    GetDevs -.->|On Explicit Failure| ErrState
+```
+

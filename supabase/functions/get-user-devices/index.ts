@@ -7,6 +7,9 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  const startTime = Date.now()
+  const requestId = crypto.randomUUID()
+
   // 1. Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -26,7 +29,7 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return new Response(
-        JSON.stringify({ error: 'Missing Authorization header' }),
+        JSON.stringify({ error: 'Missing Authorization header', requestId }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -35,7 +38,7 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
     if (authError || !user) {
       return new Response(
-        JSON.stringify({ error: 'Unauthorized: Invalid authentication session' }),
+        JSON.stringify({ error: 'Unauthorized: Invalid authentication session', requestId }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -49,7 +52,7 @@ serve(async (req) => {
 
     if (roleError || !roleData || !['admin', 'super_admin', 'moderator'].includes(roleData.role)) {
       return new Response(
-        JSON.stringify({ error: 'Forbidden: Admin access required' }),
+        JSON.stringify({ error: 'Forbidden: Admin access required', requestId }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -66,12 +69,12 @@ serve(async (req) => {
 
     if (!userId) {
       return new Response(
-        JSON.stringify({ error: 'Missing required parameter: userId' }),
+        JSON.stringify({ error: 'Missing required parameter: userId', requestId }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // 5. Query user_devices using service-role client (bypasses owner-only RLS without weakening policy)
+    // 5. Query user_devices using service-role client (fetches all historical records)
     const { data: rawDevices, error: dbError } = await supabaseAdmin
       .from('user_devices')
       .select('*')
@@ -96,13 +99,13 @@ serve(async (req) => {
       os_version: d.os_version || 'Unknown',
       app_version: d.app_version || '1.0.0',
       build_number: d.build_number ? String(d.build_number) : '1',
-      last_active_at: d.last_active_at || null,
-      created_at: d.created_at,
-      updated_at: d.updated_at,
+      last_active_at: d.last_active_at || d.updated_at || null,
+      created_at: d.created_at || new Date().toISOString(),
+      updated_at: d.updated_at || new Date().toISOString(),
       is_active: Boolean(d.is_active),
       logged_out_at: d.logged_out_at || null,
       last_token_synced_at: d.last_token_synced_at || null,
-      has_fcm_token: Boolean(d.fcm_token)
+      has_fcm_token: Boolean(d.fcm_token && String(d.fcm_token).trim().length > 0)
     }))
 
     // Sort most recently active first
@@ -115,6 +118,7 @@ serve(async (req) => {
     const total = devices.length
     const active = devices.filter((d: any) => d.is_active).length
     const inactive = total - active
+    const durationMs = Date.now() - startTime
 
     return new Response(
       JSON.stringify({
@@ -123,6 +127,11 @@ serve(async (req) => {
           total,
           active,
           inactive
+        },
+        telemetry: {
+          requestId,
+          durationMs,
+          deviceCount: total
         }
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -131,7 +140,10 @@ serve(async (req) => {
   } catch (error: any) {
     console.error('Error in get-user-devices function:', error)
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        requestId 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }

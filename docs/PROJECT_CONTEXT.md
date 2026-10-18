@@ -81,8 +81,11 @@ lastspot_backend/
 │   ├── config.toml               # Local Supabase CLI configuration
 │   ├── functions/                # Deno TypeScript Edge Functions
 │   │   ├── create-admin-user/    # Secure admin account provisioning via Service Role
-│   │   └── get-user-devices/     # Secure device inspection bypassing client RLS
+│   │   ├── get-user-devices/     # Secure device inspection bypassing client RLS
+│   │   └── get-user-details/     # Multi-source user profile & device retrieval (auth.users fallback)
 │   └── migrations/               # PostgreSQL DDL migrations
+│       ├── 20261018000000_admin_device_access.sql
+│       └── 20261019000000_user_data_and_device_consistency.sql
 ├── package.json                  # Dependencies and build scripts
 └── vite.config.ts                # Vite configuration with route aliases and base URL
 ```
@@ -95,8 +98,8 @@ lastspot_backend/
 | **Authentication** | Completed | Email/password login, remember-me persistence, password recovery link & reset flow |
 | **RBAC Authorization** | Completed | 3 roles (`super_admin`, `admin`, `moderator`) with fine-grained route & action guards |
 | **Dashboard** | Completed | Real-time counts across 10 metrics, recent users, posts, and device streams |
-| **Users Directory** | Completed | Search by name/email (via RPC), status filters, city filter, pagination |
-| **User Inspection** | Completed | Profile status toggle (Active/Suspend/Ban), soft-delete, device telemetry list |
+| **Users Directory** | Completed | Search by name/email/phone, status filters, city filter, pagination |
+| **User Inspection** | Completed | Full specifications card, auth.users email fallback, decoupled state, complete device telemetry |
 | **Activity Posts** | Completed | Filter by category, status, city; inspect applicants; change post status |
 | **Join Applications**| Completed | View applicants, post ownership, status badges, applicant profiles |
 | **Categories** | Completed | Icon, slug, display order, active toggle, create & edit modals |
@@ -110,6 +113,6 @@ lastspot_backend/
 ---
 
 ## 5. Development Branch & Working Tree
-- **Current Active Branch**: `feature/khelbhai-admin-rebrand`
-- **Base Branch**: `main` (tracked at `origin/main`)
+- **Current Active Branch**: `fix/admin-user-data-device-consistency`
+- **Base Branch**: `feature/khelbhai-admin-rebrand` (tracked at `origin/feature/khelbhai-admin-rebrand`)
 - **Working Tree Cleanliness**: Verified via `git status`. All modifications are grouped into logical commits.

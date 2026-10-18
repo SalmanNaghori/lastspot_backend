@@ -64,3 +64,32 @@ This document catalogs key architectural decisions, rationale, context, and cons
 - **Consequences**:
   - Seamless migration for active administrator sessions without abrupt logouts.
   - Complete cleanup on logout preventing session leakage.
+
+---
+
+## ADR 007: Multi-Tier Resilient User Profile & Device Telemetry Retrieval
+- **Status**: Accepted
+- **Context**: Admin device inspection requires viewing devices owned by arbitrary user IDs. Direct PostgREST queries can be filtered by Row-Level Security (`auth.uid() = user_id`) unless admin policies are present, and remote Edge Functions or migrations may be deployed in stages.
+- **Decision**: Implement a multi-tier resolution strategy in `adminRepo.ts` and `devices.ts`:
+  1. Primary: Server-side Supabase Edge Functions (`get-user-details`, `get-user-devices`).
+  2. Secondary: PostgreSQL `SECURITY DEFINER` RPC functions (`get_user_details_for_admin`, `get_user_devices_for_admin`).
+  3. Tertiary: Direct PostgREST query on `public.profiles`, `public.cities`, and `public.user_devices`.
+  4. Failure Handling: Explicit failure state with Retry mechanism; never mask database/network errors into empty arrays.
+- **Consequences**:
+  - Maximum reliability across local development, staging, and production environments.
+  - Safe diagnostic logging with request IDs, latency, and status codes.
+  - 100% protection against secret leakage (FCM tokens and hardware identifiers are never returned).
+
+---
+
+## ADR 008: Server-Side Email & Phone Fallback Resolution from `auth.users`
+- **Context**: Older user accounts created before database profile email synchronization triggers often possess `email` and `phone` exclusively in Supabase `auth.users`, leaving `public.profiles.email` null. The browser client cannot possess the Supabase `service_role` key.
+- **Decision**: Resolve missing contact details server-side within `get-user-details` Edge Function and `get_user_details_for_admin` RPC using the following fallback priority:
+  - Email: `profiles.email` -> `auth.users.email` -> `auth.users.user_metadata.email`.
+  - Phone: `profiles.phone` -> `auth.users.phone` -> `auth.users.user_metadata.phone`.
+  - City / State: `public.cities` lookup via `profiles.city_id` -> `profiles.city`.
+- **Consequences**:
+  - Existing and older accounts display complete and accurate contact details in the admin portal.
+  - Service-role privileges remain strictly confined to the backend.
+  - Zero database mutations required to view existing data.
+

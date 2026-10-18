@@ -176,7 +176,9 @@ export function UsersPage() {
                         <img src={u.avatar_url || 'https://via.placeholder.com/40'} alt="" className="w-9 h-9 rounded-full object-cover bg-slate-800 border border-slate-700" />
                         <div>
                           <p className="font-bold text-slate-200 text-sm">{u.full_name || 'Anonymous'}</p>
-                          <p className="text-[10px] font-mono text-slate-400">{u.email}</p>
+                          <p className="text-[10px] font-mono text-slate-400">
+                            {u.email || u.phone || <span className="text-slate-500 italic">No contact provided</span>}
+                          </p>
                         </div>
                       </div>
                     </td>
