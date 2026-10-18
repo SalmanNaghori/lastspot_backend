@@ -41,7 +41,7 @@ export function UsersPage() {
     return () => {
       ignore = true;
     };
-  }, [search, statusFilter, deletedFilter, page]);
+  }, [search, statusFilter, deletedFilter, cityFilter, page]);
 
   const updateParam = (key: string, value: string | null) => {
     setLoading(true);

@@ -32,9 +32,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const fetchSessionAndRole = async () => {
       try {
-        // Enforce custom Remember Me logic
-        const localSession = localStorage.getItem('activity_admin_session')
-        const activeSession = sessionStorage.getItem('activity_admin_session')
+        // Enforce custom Remember Me logic with KhelBhai branded session keys
+        const localSession = localStorage.getItem('khelbhai_admin_session') || localStorage.getItem('activity_admin_session')
+        const activeSession = sessionStorage.getItem('khelbhai_admin_session') || sessionStorage.getItem('activity_admin_session')
         
         // Bypass custom logout logic if we are actively recovering a password
         const isRecovery = window.location.hash.includes('type=recovery') || window.location.pathname.includes('/reset-password')
@@ -125,7 +125,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const signOut = async () => {
+    localStorage.removeItem('khelbhai_admin_session')
+    sessionStorage.removeItem('khelbhai_admin_session')
+    localStorage.removeItem('activity_admin_session')
+    sessionStorage.removeItem('activity_admin_session')
     await supabase.auth.signOut()
+    setSession(null)
+    setUser(null)
+    setRole(null)
   }
 
   return (

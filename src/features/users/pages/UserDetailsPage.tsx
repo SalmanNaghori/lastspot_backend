@@ -14,8 +14,7 @@ import {
   CheckCircle2, 
   LogOut, 
   Bell, 
-  BellOff, 
-  Layers
+  BellOff
 } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -97,9 +96,34 @@ export function UserDetailsPage() {
   }, [id]);
 
   useEffect(() => {
-    loadUser();
-    loadDevices();
-  }, [loadUser, loadDevices]);
+    if (!id) return;
+    let ignore = false;
+    Promise.all([
+      adminRepo.getUserById(id),
+      adminRepo.getUserDevices(id)
+    ]).then(([u, d]) => {
+      if (!ignore) {
+        if (!u) {
+          setError("User not found");
+        } else {
+          setUser(u);
+        }
+        setDevicesData(d);
+        setLoading(false);
+        setDevicesLoading(false);
+      }
+    }).catch(err => {
+      if (!ignore) {
+        setError(err.message || 'Failed to load user details');
+        setLoading(false);
+        setDevicesLoading(false);
+      }
+    });
+
+    return () => {
+      ignore = true;
+    };
+  }, [id]);
 
   if (loading) {
     return (
@@ -360,7 +384,7 @@ export function UserDetailsPage() {
                   <p className="text-xs text-rose-400/90 mt-1 break-words">{devicesError}</p>
                 </div>
                 <button
-                  onClick={loadDevices}
+                  onClick={() => loadDevices()}
                   className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 transition-colors shadow-sm"
                 >
                   <RefreshCw className="w-3.5 h-3.5" /> Retry Device Load
