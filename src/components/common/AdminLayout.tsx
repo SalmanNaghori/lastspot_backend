@@ -111,12 +111,15 @@ export const AdminLayout: React.FC = () => {
         
         {/* Brand */}
         <div className="flex items-center gap-3 px-6">
-          <div className="w-10 h-10 rounded-xl bg-transparent border-2 border-emerald-500/80 flex items-center justify-center shrink-0">
-            <Activity className="w-5 h-5 text-emerald-400" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/25 to-teal-500/10 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/40">
+            <Activity className="w-5 h-5 text-emerald-400 stroke-[2.2]" />
           </div>
           <div>
-            <h1 className="font-extrabold text-base tracking-tight text-white leading-tight">{AppStrings.Navigation.brand}</h1>
-            <p className="text-[9px] text-slate-500 uppercase tracking-widest font-mono mt-0.5 font-bold">{AppStrings.Navigation.portalType}</p>
+            <h1 className="font-extrabold text-base tracking-tight text-white leading-tight flex items-center gap-1.5">
+              <span>{AppStrings.Navigation.brand}</span>
+              <span className="text-[10px] px-1.5 py-0.5 font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 rounded-md">ADMIN</span>
+            </h1>
+            <p className="text-[9px] text-slate-400 uppercase tracking-widest font-mono mt-0.5 font-bold">{AppStrings.Navigation.portalType}</p>
           </div>
         </div>
 
@@ -150,10 +153,13 @@ export const AdminLayout: React.FC = () => {
       {/* ── MOBILE HEADER ───────────────────────────────────────────────── */}
       <header className="md:hidden border-b border-slate-800 bg-[#111827] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg border-2 border-emerald-500/80 flex items-center justify-center">
-            <Activity className="w-4 h-4 text-emerald-400" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/25 to-teal-500/10 border border-emerald-500/40 flex items-center justify-center">
+            <Activity className="w-4 h-4 text-emerald-400 stroke-[2.2]" />
           </div>
-          <span className="font-extrabold text-sm text-white">{AppStrings.Navigation.brand}</span>
+          <div className="flex items-center gap-1.5">
+            <span className="font-extrabold text-sm text-white">{AppStrings.Navigation.brand}</span>
+            <span className="text-[9px] px-1 py-0.2 font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 rounded">ADMIN</span>
+          </div>
         </div>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -184,7 +190,16 @@ export const AdminLayout: React.FC = () => {
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
         <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
           <div className="max-w-7xl mx-auto space-y-6 pb-12">
-            <Outlet />
+            <React.Suspense fallback={
+              <div className="flex items-center justify-center min-h-[350px]">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-8 h-8 rounded-full border-2 border-emerald-500/20 border-t-emerald-500 animate-spin" />
+                  <p className="text-xs text-slate-400 font-medium tracking-wide">Loading KhelBhai Control Center...</p>
+                </div>
+              </div>
+            }>
+              <Outlet />
+            </React.Suspense>
           </div>
         </main>
       </div>

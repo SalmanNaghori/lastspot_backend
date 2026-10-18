@@ -1,9 +1,9 @@
 export const AppStrings = {
   Auth: {
-    title: 'ActivityConnect Admin',
-    subtitle: 'Mobile Activity & Requirements Control Backoffice',
+    title: 'KhelBhai Admin',
+    subtitle: 'Sports, Social Activities & Community Backoffice',
     adminEmailLabel: 'Admin Email',
-    emailPlaceholder: 'admin@activityconnect.com',
+    emailPlaceholder: 'admin@khelbhai.com',
     passwordLabel: 'Password',
     signInButton: 'Sign In to Dashboard',
     signingIn: 'Signing In...',
@@ -34,8 +34,8 @@ export const AppStrings = {
     }
   },
   Navigation: {
-    brand: 'ActivityConnect',
-    portalType: 'Backoffice Portal',
+    brand: 'KhelBhai',
+    portalType: 'Control Center',
     logout: 'Logout',
     adminFallbackName: 'Admin',
     groups: {
@@ -59,9 +59,9 @@ export const AppStrings = {
     }
   },
   Dashboard: {
-    title: 'Platform Overview',
-    subtitle: 'Real-time statistics across users, posts, join applications, and reports',
-    loading: 'Loading platform analytics...',
+    title: 'KhelBhai Control Center',
+    subtitle: 'Real-time platform overview across users, sports activities, join applications, and devices',
+    loading: 'Loading KhelBhai platform analytics...',
     cards: {
       users: {
         title: 'Total Users',
@@ -172,7 +172,7 @@ export const AppStrings = {
   },
   Cities: {
     title: 'Cities Management',
-    subtitle: 'Manage cities available in LastSpot.',
+    subtitle: 'Manage cities available in KhelBhai.',
     addCity: 'Add City',
     loading: 'Loading cities...',
     noData: 'No cities found.',
@@ -516,7 +516,7 @@ export const AppStrings = {
       nameLabel: 'Full Name',
       namePlaceholder: 'e.g. John Doe',
       emailLabel: 'Email Address',
-      emailPlaceholder: 'admin@activityconnect.com',
+      emailPlaceholder: 'admin@khelbhai.com',
       passwordLabel: 'Temporary Password',
       passwordPlaceholder: 'Minimum 6 characters',
       roleLabel: 'Select Role',

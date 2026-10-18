@@ -105,11 +105,15 @@ export const LoginPage: React.FC = () => {
       }
 
       if (rememberMe) {
-        localStorage.setItem('activity_admin_session', JSON.stringify(sessionPayload))
+        localStorage.setItem('khelbhai_admin_session', JSON.stringify(sessionPayload))
+        sessionStorage.removeItem('khelbhai_admin_session')
+        localStorage.removeItem('activity_admin_session')
         sessionStorage.removeItem('activity_admin_session')
       } else {
-        sessionStorage.setItem('activity_admin_session', JSON.stringify(sessionPayload))
+        sessionStorage.setItem('khelbhai_admin_session', JSON.stringify(sessionPayload))
+        localStorage.removeItem('khelbhai_admin_session')
         localStorage.removeItem('activity_admin_session')
+        sessionStorage.removeItem('activity_admin_session')
       }
 
       showToast(`Welcome back, ${signInData.user.user_metadata?.full_name || 'Admin'}!`, 'success')
