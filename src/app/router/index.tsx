@@ -1,25 +1,25 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { LoginPage } from '@/features/auth/pages/LoginPage'
-import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage'
-import { ResetPasswordPage } from '@/features/auth/pages/ResetPasswordPage'
-import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
-import { UsersPage } from '@/features/users/pages/UsersPage'
-import { UserDetailsPage } from '@/features/users/pages/UserDetailsPage'
-import { DevicesPage } from '@/features/devices/pages/DevicesPage'
-import { AppSettingsPage } from '@/features/settings/pages/AppSettingsPage'
-import { AdminRolesPage } from '@/features/roles/pages/AdminRolesPage'
-
-import { RequestsPage } from '@/features/requests/pages/RequestsPage'
-import { RequestDetailsPage } from '@/features/requests/pages/RequestDetailsPage'
-import { JoinRequestsPage } from '@/features/requests/pages/JoinRequestsPage'
-import { CategoriesPage } from '@/features/categories/pages/CategoriesPage'
-import { CitiesPage } from '@/features/cities/pages/CitiesPage'
-import { NotificationsPage } from '@/features/notifications/pages/NotificationsPage'
-import { NotificationHistoryPage } from '@/features/notifications/pages/NotificationHistoryPage'
-import { ReportsPage } from '@/features/moderation/pages/ReportsPage'
-
 import { ProtectedRoute } from './ProtectedRoute'
 import { AdminLayout } from '@/components/common/AdminLayout'
+import {
+  LoginPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+  DashboardPage,
+  UsersPage,
+  UserDetailsPage,
+  DevicesPage,
+  AppSettingsPage,
+  AdminRolesPage,
+  RequestsPage,
+  RequestDetailsPage,
+  JoinRequestsPage,
+  CategoriesPage,
+  CitiesPage,
+  NotificationsPage,
+  NotificationHistoryPage,
+  ReportsPage,
+} from './lazyRoutes'
 
 export const router = createBrowserRouter(
   [
