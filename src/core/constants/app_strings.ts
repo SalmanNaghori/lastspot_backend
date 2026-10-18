@@ -290,9 +290,12 @@ export const AppStrings = {
     },
     tableHeaders: {
       user: 'User',
-      model: 'Device Model',
+      model: 'Device',
       platform: 'Platform',
-      version: 'App Version'
+      osVersion: 'OS Version',
+      appVersion: 'App Version',
+      build: 'Build',
+      lastActive: 'Last Active'
     }
   },
   Requests: {

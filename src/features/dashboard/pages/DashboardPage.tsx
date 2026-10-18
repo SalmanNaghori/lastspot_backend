@@ -232,7 +232,7 @@ export function DashboardPage() {
             {recentDevices.map((d: any) => (
               <div key={d.id} onClick={() => navigate(`/users/${d.user_id}`)} className="py-2.5 flex flex-col justify-center cursor-pointer hover:bg-slate-800/30 px-2 rounded-xl transition-colors">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-200">{d.device_name || 'Unknown Device'}</p>
+                  <p className="text-xs font-semibold text-slate-200">{d.device_model || 'Unknown Device'}</p>
                   <span className="text-[9px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">{d.platform || 'Unknown'}</span>
                 </div>
                 <p className="text-[10px] text-slate-500 mt-1">

@@ -25,5 +25,10 @@ jobs:
         with:
           version: latest
 
+      - name: Push Supabase Configuration
+        run: supabase config push --project-ref $PROJECT_ID
+        env:
+          SITE_URL: ${{ secrets.PROD_SITE_URL }}
+
       - name: Deploy Supabase Functions
         run: supabase functions deploy --project-ref $PROJECT_ID

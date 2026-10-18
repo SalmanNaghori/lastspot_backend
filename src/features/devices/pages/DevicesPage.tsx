@@ -4,6 +4,25 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, RefreshCw, XCircle } from 'lucide-react';
 import { AppStrings } from '@/core/constants/app_strings';
 
+function formatRelativeTime(dateString: string) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+  if (diffInSeconds < 60) return 'Just now';
+  
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays === 1) return 'Yesterday';
+  
+  return `${diffInDays} days ago`;
+}
+
 export function DevicesPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -110,7 +129,10 @@ export function DevicesPage() {
                   <th className="px-5 py-4">{AppStrings.Devices.tableHeaders.user}</th>
                   <th className="px-5 py-4">{AppStrings.Devices.tableHeaders.model}</th>
                   <th className="px-5 py-4">{AppStrings.Devices.tableHeaders.platform}</th>
-                  <th className="px-5 py-4">{AppStrings.Devices.tableHeaders.version}</th>
+                  <th className="px-5 py-4">{AppStrings.Devices.tableHeaders.osVersion}</th>
+                  <th className="px-5 py-4">{AppStrings.Devices.tableHeaders.appVersion}</th>
+                  <th className="px-5 py-4">{AppStrings.Devices.tableHeaders.build}</th>
+                  <th className="px-5 py-4">{AppStrings.Devices.tableHeaders.lastActive}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
@@ -120,14 +142,22 @@ export function DevicesPage() {
                     onClick={() => navigate(`/users/${d.user_id}`)}
                     className="hover:bg-slate-800/40 transition-colors cursor-pointer"
                   >
-                    <td className="px-5 py-4 text-emerald-400 font-semibold">{d.user_name}</td>
-                    <td className="px-5 py-4 text-slate-200">{d.device_model}</td>
+                    <td className="px-5 py-4">
+                      <p className="text-emerald-400 font-semibold">{d.user_name}</p>
+                      <p className="text-[10px] text-slate-400">{d.user_email}</p>
+                    </td>
+                    <td className="px-5 py-4 text-slate-200">{d.device_model || 'Unknown device'}</td>
                     <td className="px-5 py-4 text-slate-300">
                       <span className="px-2 py-1 rounded bg-slate-950 border border-slate-700 text-[10px] font-mono">
-                        {d.platform}
+                        {d.platform === 'android' ? 'Android' : d.platform === 'ios' ? 'iOS' : d.platform === 'web' ? 'Web' : d.platform}
                       </span>
                     </td>
-                    <td className="px-5 py-4 text-slate-400 font-mono">v{d.app_version}</td>
+                    <td className="px-5 py-4 text-slate-400 font-mono">{d.os_version || '-'}</td>
+                    <td className="px-5 py-4 text-slate-400 font-mono">{d.app_version ? `v${d.app_version}` : '-'}</td>
+                    <td className="px-5 py-4 text-slate-400 font-mono">{d.build_number || '-'}</td>
+                    <td className="px-5 py-4 text-slate-400">
+                      {d.last_active_at ? formatRelativeTime(d.last_active_at) : 'Never'}
+                    </td>
                   </tr>
                 ))}
               </tbody>

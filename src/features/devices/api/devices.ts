@@ -3,18 +3,24 @@ import { supabase } from '@/core/supabase/client';
 export interface UserDevice {
   id: string;
   user_id: string;
+  device_identifier?: string;
   platform: string;
-  device_model: string;
-  os_version: string;
-  app_version: string;
-  build_number: string;
+  device_model: string | null;
+  os_version: string | null;
+  app_version: string | null;
+  build_number: string | number | null;
   last_active_at: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   is_active: boolean;
-  logged_out_at: string | null;
-  last_token_synced_at: string | null;
+  logged_out_at?: string | null;
+  last_token_synced_at?: string | null;
   has_fcm_token: boolean;
+  profiles?: {
+    full_name: string | null;
+    email: string | null;
+    avatar_url?: string | null;
+  } | null;
 }
 
 export interface UserDevicesSummary {
@@ -214,10 +220,7 @@ export interface FetchAllDevicesParams {
 }
 
 export const fetchAllDevices = async ({ page, perPage, platform }: FetchAllDevicesParams) => {
-  // Select only safe non-sensitive columns (exclude raw fcm_token and device_identifier)
-  let query = supabase
-    .from('user_devices')
-    .select('id, user_id, platform, device_model, os_version, app_version, last_active_at, is_active, created_at, profiles(full_name, avatar_url)', { count: 'exact' });
+  let query = supabase.from('user_devices').select('id, user_id, device_identifier, platform, device_model, os_version, app_version, build_number, last_active_at, is_active, created_at, updated_at, profiles(full_name, avatar_url, email)', { count: 'exact' });
   
   if (platform && platform !== 'all') {
     query = query.ilike('platform', `%${platform}%`);
