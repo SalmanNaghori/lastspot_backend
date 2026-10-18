@@ -51,3 +51,8 @@ All notable changes to the KhelBhai Admin Panel will be documented in this file.
   - `docs/DEVELOPMENT_SOP.md`
 - Created AI-agent persistent instruction file in `.agents/rules/project_context.md`.
 - Updated `README.md` with accurate React 19, TypeScript, and Vite specifications.
+
+### 🔧 Repository & Tooling
+- **Git & Environment Hygiene**:
+  - Implemented comprehensive `.gitignore` covering dependencies, build artifacts, environments, keys, and IDE/OS files.
+  - Added `.env.example` template for streamlined team onboarding and CI reference.
