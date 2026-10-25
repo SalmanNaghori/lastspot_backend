@@ -45,8 +45,8 @@ export interface UserDevicesResponse {
  * Used as a fallback if remote RLS restricts unprivileged direct client
  * querying prior to Supabase Edge Function / RPC deployment.
  */
-const ZORO_USER_ID = 'ebbf2bbe-2842-430f-bb32-0e77d7de238f';
-const ZORO_BASELINE_DEVICES: UserDevice[] = [
+export const ZORO_USER_ID = 'ebbf2bbe-2842-430f-bb32-0e77d7de238f';
+export const ZORO_BASELINE_DEVICES: UserDevice[] = [
   {
     id: 'f1a23b45-67c8-49de-bf01-23456789abcd',
     user_id: ZORO_USER_ID,

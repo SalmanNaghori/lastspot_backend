@@ -9,7 +9,6 @@ import { useRBAC } from '@/app/providers/useRBAC';
 import { useToast } from '@/app/providers/ToastProvider';
 import { AppStrings } from '@/core/constants/app_strings';
 import { KhelBhaiLogo } from './KhelBhaiLogo';
-import { AdminThemeToggle } from './AdminThemeToggle';
 import { AdminStatusBadge } from './AdminStatusBadge';
 
 interface AdminSidebarProps {
@@ -133,13 +132,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
       </nav>
 
       {/* Footer User Info & Controls */}
-      <div className="p-3 border-t border-[var(--kb-border)] bg-[var(--kb-surface-subtle)]/40 space-y-3">
-        {/* Theme Segmented Switcher */}
-        <div className="flex items-center justify-between px-1">
-          <span className="text-[11px] font-bold text-[var(--kb-muted)]">Theme</span>
-          <AdminThemeToggle variant="segmented" />
-        </div>
-
+      <div className="p-3 border-t border-[var(--kb-border)] bg-[var(--kb-surface-subtle)]/40">
         {/* User Card */}
         <div className="p-2.5 rounded-xl bg-[var(--kb-surface)] border border-[var(--kb-border)] flex items-center justify-between gap-2 shadow-sm">
           <div className="flex items-center gap-2.5 min-w-0">

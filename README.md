@@ -128,7 +128,8 @@ The KhelBhai Admin Panel provides 11 dedicated functional modules:
 ```text
 lastspot_backend/
 ├── .agents/                      # AI pair-programming rules & project context
-│   └── rules/
+│   ├── rules/                    # Architectural guidelines & graphify agent rules
+│   └── workflows/                # Agent slash workflows (/graphify)
 ├── .github/                      # CI/CD automation
 │   └── workflows/
 │       ├── ci.yml                # Automated build & lint check
@@ -221,6 +222,55 @@ npm run preview
 
 - **GitHub Pages Deployment:** Pushes to `main` automatically trigger [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), building the production distribution and publishing the SPA to GitHub Pages.
 - **Edge Functions Deployment:** Changes to `supabase/functions/` are deployed automatically using [`.github/workflows/deploy-functions.yml`](.github/workflows/deploy-functions.yml).
+
+---
+
+## 🧠 Codebase Intelligence & Knowledge Graph (Graphify)
+
+The project includes built-in knowledge graph tooling using **Graphify** to convert the entire codebase AST into a queryable knowledge graph with community clustering, visual architecture exploration, and GraphRAG querying.
+
+> [!NOTE]
+> All generated knowledge graph files and caches (`graphify-out/`, `.graphify*`) are local-only and excluded from version control via `.gitignore` to keep git commits and GitHub clean.
+
+### 1. Generating or Updating the Graph
+```bash
+# Full local AST extraction (100% deterministic, 0 API token cost):
+graphify extract . --code-only
+
+# Or within AI coding assistants:
+/graphify .
+
+# Incremental update after modifying code:
+graphify update .
+```
+
+### 2. Exploring Visualizations in the Browser
+Once generated, the following standalone HTML files can be opened directly without running a web server:
+- **Interactive Force Graph:** `graphify-out/graph.html` (interactive zoom, pan, search, community clustering)
+  ```powershell
+  Start-Process graphify-out\graph.html
+  ```
+- **Call-Flow Architecture:** `graphify-out/lastspot_backend-1-callflow.html` (interactive Mermaid diagrams & call tables)
+  ```powershell
+  Start-Process graphify-out\lastspot_backend-1-callflow.html
+  ```
+- **Collapsible Symbol Hierarchy:** `graphify-out/GRAPH_TREE.html` (D3 collapsible directory & symbol tree)
+  ```powershell
+  Start-Process graphify-out\GRAPH_TREE.html
+  ```
+- **Architecture Report:** View `graphify-out/GRAPH_REPORT.md` in markdown preview for metrics, God nodes, and cohesion scores.
+
+### 3. Querying from the Terminal
+```bash
+# Search neighbors and context around a symbol or concept:
+graphify query "AuthContext"
+
+# Find the shortest dependency path between components:
+graphify path "LoginPage.tsx" "src/core/supabase/client.ts::supabase"
+
+# Explain a specific node and its inbound/outbound connections:
+graphify explain "ComprehensiveAdminRepository"
+```
 
 ---
 

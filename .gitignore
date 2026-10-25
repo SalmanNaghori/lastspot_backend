@@ -74,3 +74,8 @@ tmp/
 temp/
 *.tmp
 *.temp
+
+# Graphify Knowledge Graph & Generated Artifacts
+graphify-out/
+.graphify*
+
