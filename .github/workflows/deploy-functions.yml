@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - 'supabase/functions/**'
+    paths-ignore:
+      - 'supabase/functions/**/*.d.ts'
+      - 'supabase/functions/tsconfig.json'
 
   workflow_dispatch:
 

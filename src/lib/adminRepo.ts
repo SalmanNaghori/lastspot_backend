@@ -125,7 +125,7 @@ class ComprehensiveAdminRepository {
 
   async getRecentDevices(limit = 5) {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('user_devices')
         .select(`
           id,
@@ -141,7 +141,7 @@ class ComprehensiveAdminRepository {
         .order('last_active_at', { ascending: false })
         .limit(limit);
 
-      let devicesList = data || [];
+      const devicesList = data || [];
 
       // Fallback to baseline devices if remote table returns 0 or errors out
       if (devicesList.length === 0 && ZORO_BASELINE_DEVICES.length > 0) {
@@ -869,7 +869,7 @@ class ComprehensiveAdminRepository {
       }
 
       const start = (page - 1) * pageSize;
-      const { data: rawDevices, count, error } = await query.range(start, start + pageSize - 1).order('last_active_at', { ascending: false });
+      const { data: rawDevices, count } = await query.range(start, start + pageSize - 1).order('last_active_at', { ascending: false });
 
       let devices = rawDevices || [];
 

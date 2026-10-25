@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Check, Ban } from 'lucide-react';
+import { Check, Ban } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { AppStrings } from '@/core/constants/app_strings';
 import { useToast } from '@/app/providers/ToastProvider';
