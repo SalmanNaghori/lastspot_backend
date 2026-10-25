@@ -2,41 +2,83 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --kb-bg: #FFF8F1;
+  --kb-surface: #FFFFFF;
+  --kb-surface-subtle: #FDF3E7;
+  --kb-border: #F0E4DA;
+  --kb-text: #171D2A;
+  --kb-muted: #697386;
+  
+  --background: 30 100% 97%;
+  --foreground: 220 29% 13%;
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 220 29% 13%;
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96.1%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96.1%;
-  --accent-foreground: 222.2 47.4% 11.2%;
+  --popover-foreground: 220 29% 13%;
+  --primary: 17 90% 58%;
+  --primary-foreground: 30 100% 97%;
+  --secondary: 30 50% 95%;
+  --secondary-foreground: 220 29% 13%;
+  --muted: 30 40% 94%;
+  --muted-foreground: 218 12% 47%;
+  --accent: 30 50% 95%;
+  --accent-foreground: 17 90% 58%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 221.2 83.2% 53.3%;
-  --radius: 0.5rem;
+  --border: 28 45% 90%;
+  --input: 28 45% 90%;
+  --ring: 17 90% 58%;
+  --radius: 0.75rem;
+}
+
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --kb-bg: #12141B;
+  --kb-surface: #20232D;
+  --kb-surface-subtle: #181B24;
+  --kb-border: #2E3442;
+  --kb-text: #FFF8F1;
+  --kb-muted: #9CA3AF;
+  
+  --background: 227 20% 9%;
+  --foreground: 30 100% 97%;
+  --card: 226 17% 15%;
+  --card-foreground: 30 100% 97%;
+  --popover: 226 17% 15%;
+  --popover-foreground: 30 100% 97%;
+  --primary: 17 90% 58%;
+  --primary-foreground: 30 100% 97%;
+  --secondary: 226 17% 19%;
+  --secondary-foreground: 30 100% 97%;
+  --muted: 226 17% 19%;
+  --muted-foreground: 218 11% 65%;
+  --accent: 226 17% 19%;
+  --accent-foreground: 17 90% 58%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 224 18% 22%;
+  --input: 224 18% 22%;
+  --ring: 17 90% 58%;
+  --radius: 0.75rem;
 }
 
 body {
   margin: 0;
-  background-color: #020617; /* slate-950 */
-  color: hsl(var(--foreground));
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+  background-color: var(--kb-bg);
+  color: var(--kb-text);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 * {
   box-sizing: border-box;
-  border-color: hsl(var(--border));
+  border-color: var(--kb-border);
 }
 
 /* Toast Animation */

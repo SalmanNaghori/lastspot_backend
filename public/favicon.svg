@@ -1,38 +1,37 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
   <defs>
-    <linearGradient id="kb-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#10B981" />
-      <stop offset="50%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#047857" />
+    <linearGradient id="kb-orange-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFB45E" />
+      <stop offset="60%" stop-color="#F46A35" />
+      <stop offset="100%" stop-color="#DC5425" />
     </linearGradient>
-    <linearGradient id="kb-accent" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#34D399" />
-      <stop offset="100%" stop-color="#38BDF8" />
+    <linearGradient id="kb-accent-glow" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F46A35" />
+      <stop offset="100%" stop-color="#FFD6A5" />
     </linearGradient>
-    <filter id="kb-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="2" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    <filter id="kb-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#F46A35" flood-opacity="0.35" />
     </filter>
   </defs>
 
-  <!-- Background Rounded Shield -->
-  <rect x="2" y="2" width="60" height="60" rx="16" fill="#0B1121" stroke="#1E293B" stroke-width="2" />
-  <rect x="5" y="5" width="54" height="54" rx="13" fill="#111827" fill-opacity="0.8" />
+  <!-- Background Rounded Shield / Icon Tile -->
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="#171D2A" stroke="#2E3442" stroke-width="1.5" />
+  <rect x="3.5" y="3.5" width="57" height="57" rx="14.5" fill="#12141B" fill-opacity="0.9" />
 
-  <!-- Energy Pulse Hex/Diamond Accent -->
-  <path d="M32 10 L48 20 L48 44 L32 54 L16 44 L16 20 Z" fill="url(#kb-grad)" fill-opacity="0.12" stroke="#10B981" stroke-width="1.5" stroke-dasharray="3 3" />
+  <!-- Stadium Energy Arc / Halo -->
+  <path d="M14 26 C14 18, 50 18, 50 26 C50 38, 14 38, 14 50" stroke="#FFB45E" stroke-opacity="0.25" stroke-width="2" stroke-linecap="round" stroke-dasharray="4 3" />
 
-  <!-- Dynamic 'K' & Activity Motion Emblem -->
-  <!-- Main Vertical Stem -->
-  <rect x="20" y="16" width="6.5" height="32" rx="3.25" fill="url(#kb-grad)" filter="url(#kb-glow)" />
+  <!-- Dynamic 'K' Sports Athlete Emblem -->
+  <!-- Main Vertical Kinetic Stem -->
+  <rect x="18" y="15" width="7" height="34" rx="3.5" fill="url(#kb-orange-grad)" filter="url(#kb-shadow)" />
 
-  <!-- Upper Diagonal Wing -->
-  <path d="M26 31 L38 18 C39.5 16.5 42 17.5 42 19.5 L42 22 C42 23 41.5 24 40.5 25 L32 34 Z" fill="url(#kb-accent)" />
+  <!-- Upper Diagonal Wing (Ascending Jump / Motion) -->
+  <path d="M25 31 L39 17 C40.5 15.5 43.5 16.5 43.5 18.8 L43.5 21.5 C43.5 22.8 42.8 24 41.5 25.2 L32 34 Z" fill="url(#kb-accent-glow)" />
 
-  <!-- Lower Diagonal Sprint Wing -->
-  <path d="M28 32 L40 45 C41.2 46.2 43 45.8 43.5 44.2 L44 42 C44.5 40.8 44 39.5 43 38.5 L34 29 Z" fill="url(#kb-grad)" />
+  <!-- Lower Diagonal Sprint Wing (Ground Drive) -->
+  <path d="M26.5 32.5 L41.5 46.5 C42.8 47.8 45 47.2 45.2 45.2 L45.2 42.8 C45.2 41.5 44.5 40.2 43.5 39.2 L34.5 29.5 Z" fill="url(#kb-orange-grad)" />
 
-  <!-- Central Sports Spark Indicator -->
-  <circle cx="34" cy="32" r="3" fill="#F8FAFC" />
-  <circle cx="34" cy="32" r="1.5" fill="#10B981" />
+  <!-- Kinetic Sports Energy Spark / Ball Indicator -->
+  <circle cx="36" cy="32" r="3.5" fill="#FFFFFF" />
+  <circle cx="36" cy="32" r="2" fill="#F46A35" />
 </svg>

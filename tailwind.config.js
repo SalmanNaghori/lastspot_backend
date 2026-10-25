@@ -7,6 +7,24 @@ export default {
   ],
   theme: {
     extend: {
+      colors: {
+        brand: {
+          orange: "#F46A35",
+          "orange-hover": "#DC5425",
+          amber: "#FFB45E",
+          "amber-hover": "#EAA04C",
+          "orange-light": "#FFF0E8",
+          "orange-dark": "#B83A10",
+        },
+        kb: {
+          bg: "var(--kb-bg)",
+          surface: "var(--kb-surface)",
+          "surface-subtle": "var(--kb-surface-subtle)",
+          border: "var(--kb-border)",
+          text: "var(--kb-text)",
+          muted: "var(--kb-muted)",
+        },
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
