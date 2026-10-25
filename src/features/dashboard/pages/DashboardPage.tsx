@@ -1,27 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Users, FileText, UserPlus, RefreshCw, Smartphone, MonitorSmartphone, TabletSmartphone } from 'lucide-react';
+import { 
+  Users, FileText, UserPlus, Smartphone, MonitorSmartphone, TabletSmartphone, 
+  ArrowRight, Activity
+} from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { useNavigate } from 'react-router-dom';
 import { AppStrings } from '@/core/constants/app_strings';
-
-const DashboardStatCard = ({ title, value, subtitle, icon: Icon, iconColor, onClick }: any) => {
-  return (
-    <div 
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick() }}
-      className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2 cursor-pointer hover:bg-slate-800/60 hover:border-slate-700 transition-all focus:outline-none focus:ring-2 focus:ring-emerald-500/50 outline-none"
-    >
-      <div className="flex items-center justify-between text-slate-400 text-xs font-medium">
-        <span>{title}</span>
-        <Icon className={`w-4 h-4 ${iconColor}`} />
-      </div>
-      <div className="text-2xl font-bold text-slate-100">{value}</div>
-      <p className={`text-[10px] font-medium ${iconColor}`}>{subtitle}</p>
-    </div>
-  )
-}
+import { 
+  AdminPageHeader, AdminStatCard, AdminLoadingSkeleton, 
+  AdminStatusBadge 
+} from '@/components/brand';
 
 export function DashboardPage() {
   const [stats, setStats] = useState<any>(null);
@@ -36,7 +24,7 @@ export function DashboardPage() {
       adminRepo.getDashboardStats(),
       adminRepo.getRecentRequests(5),
       adminRepo.getRecentUsers(5),
-      adminRepo.getRecentDevices(5)
+      adminRepo.getRecentDevices(5),
     ]).then(([statsData, reqsData, usersData, devicesData]) => {
       setStats(statsData);
       setRecentRequests(reqsData);
@@ -46,200 +34,288 @@ export function DashboardPage() {
     });
   }, []);
 
-  if (loading) {
+  if (loading || !stats) {
     return (
-      <div className="flex items-center justify-center h-64 text-slate-400 text-xs gap-2">
-        <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" /> {AppStrings.Dashboard.loading}
+      <div className="space-y-6">
+        <AdminPageHeader
+          title={AppStrings.Dashboard.title}
+          subtitle={AppStrings.Dashboard.subtitle}
+        />
+        <AdminLoadingSkeleton variant="cards" />
+        <AdminLoadingSkeleton variant="table" rows={4} columns={3} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-10">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 tracking-tight">{AppStrings.Dashboard.title}</h1>
-        <p className="text-xs text-slate-400 mt-0.5">{AppStrings.Dashboard.subtitle}</p>
-      </div>
+    <div className="space-y-8 max-w-7xl mx-auto pb-12">
+      {/* Header */}
+      <AdminPageHeader
+        title={AppStrings.Dashboard.title}
+        subtitle={AppStrings.Dashboard.subtitle}
+        badge={
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F46A35]/12 border border-[#F46A35]/30 text-[#F46A35] text-xs font-bold">
+            <Activity className="w-3.5 h-3.5" />
+            <span>Live Platform</span>
+          </span>
+        }
+      />
 
-      {/* USER METRICS GRID */}
-      <div>
-        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">{AppStrings.Dashboard.sections.userAnalytics}</h2>
+      {/* USER METRICS */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-black uppercase tracking-wider text-[var(--kb-muted)]">
+            {AppStrings.Dashboard.sections.userAnalytics}
+          </h2>
+          <button
+            onClick={() => navigate('/users')}
+            className="text-xs font-bold text-[#F46A35] hover:text-[#DC5425] flex items-center gap-1 transition-colors"
+          >
+            <span>Manage All Users</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.users.title} 
-            value={stats.users.total} 
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.users.title}
+            value={stats.users.total}
             subtitle={AppStrings.Dashboard.cards.users.subtext}
-            icon={Users} 
-            iconColor="text-emerald-400" 
+            icon={Users}
+            iconColor="text-[#F46A35]"
             onClick={() => navigate('/users')}
           />
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.activeUsers.title} 
-            value={stats.users.active} 
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.activeUsers.title}
+            value={stats.users.active}
             subtitle={AppStrings.Dashboard.cards.activeUsers.subtext}
-            icon={Users} 
-            iconColor="text-emerald-500" 
+            icon={Users}
+            iconColor="text-emerald-500"
             onClick={() => navigate('/users?status=active')}
           />
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.suspendedUsers.title} 
-            value={stats.users.suspended} 
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.suspendedUsers.title}
+            value={stats.users.suspended}
             subtitle={AppStrings.Dashboard.cards.suspendedUsers.subtext}
-            icon={Users} 
-            iconColor="text-amber-400" 
+            icon={Users}
+            iconColor="text-amber-500"
             onClick={() => navigate('/users?status=suspended')}
           />
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.bannedUsers.title} 
-            value={stats.users.banned} 
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.bannedUsers.title}
+            value={stats.users.banned}
             subtitle={AppStrings.Dashboard.cards.bannedUsers.subtext}
-            icon={Users} 
-            iconColor="text-rose-400" 
+            icon={Users}
+            iconColor="text-rose-500"
             onClick={() => navigate('/users?status=banned')}
           />
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.deletedUsers.title} 
-            value={stats.users.deleted} 
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.deletedUsers.title}
+            value={stats.users.deleted}
             subtitle={AppStrings.Dashboard.cards.deletedUsers.subtext}
-            icon={Users} 
-            iconColor="text-slate-400" 
+            icon={Users}
+            iconColor="text-slate-400"
             onClick={() => navigate('/users?deleted=true')}
           />
         </div>
-      </div>
+      </section>
 
-      {/* PLATFORM METRICS GRID */}
-      <div>
-        <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">{AppStrings.Dashboard.sections.activityAnalytics}</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.requests.title} 
-            value={stats.requests.total} 
-            subtitle={`${stats.requests.active} Open & Active`}
-            icon={FileText} 
-            iconColor="text-cyan-400" 
+      {/* PLATFORM & ACTIVITY METRICS */}
+      <section className="space-y-3">
+        <h2 className="text-xs font-black uppercase tracking-wider text-[var(--kb-muted)]">
+          {AppStrings.Dashboard.sections.activityAnalytics}
+        </h2>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.requests.title}
+            value={stats.requests.total}
+            subtitle={`${stats.requests.active} Open`}
+            icon={FileText}
+            iconColor="text-[#F46A35]"
             onClick={() => navigate('/requests')}
           />
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.joinRequests.title} 
-            value={stats.joinRequests.pending} 
-            subtitle={`${stats.joinRequests.pending} Awaiting approval`}
-            icon={UserPlus} 
-            iconColor="text-amber-400" 
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.joinRequests.title}
+            value={stats.joinRequests.pending}
+            subtitle="Awaiting Review"
+            icon={UserPlus}
+            iconColor="text-amber-500"
             onClick={() => navigate('/join-requests?status=pending')}
           />
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.devices.title} 
-            value={stats.devices.total} 
-            subtitle={AppStrings.Dashboard.cards.devices.subtext}
-            icon={Smartphone} 
-            iconColor="text-indigo-400" 
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.devices.title}
+            value={stats.devices.total}
+            subtitle="Registered"
+            icon={Smartphone}
+            iconColor="text-indigo-500"
             onClick={() => navigate('/devices')}
           />
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.androidDevices.title} 
-            value={stats.devices.android} 
-            subtitle={AppStrings.Dashboard.cards.androidDevices.subtext}
-            icon={TabletSmartphone} 
-            iconColor="text-emerald-400" 
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.androidDevices.title}
+            value={stats.devices.android}
+            subtitle="Android Active"
+            icon={TabletSmartphone}
+            iconColor="text-emerald-500"
             onClick={() => navigate('/devices?platform=Android')}
           />
-          <DashboardStatCard 
-            title={AppStrings.Dashboard.cards.iosDevices.title} 
-            value={stats.devices.ios} 
-            subtitle={AppStrings.Dashboard.cards.iosDevices.subtext}
-            icon={MonitorSmartphone} 
-            iconColor="text-slate-300" 
+          <AdminStatCard
+            title={AppStrings.Dashboard.cards.iosDevices.title}
+            value={stats.devices.ios}
+            subtitle="iOS Active"
+            icon={MonitorSmartphone}
+            iconColor="text-sky-500"
             onClick={() => navigate('/devices?platform=iOS')}
           />
-          <DashboardStatCard 
-            title="Web/Desktop" 
-            value={stats.devices.web} 
-            subtitle="Web Platform"
-            icon={MonitorSmartphone} 
-            iconColor="text-sky-400" 
+          <AdminStatCard
+            title="Web Platforms"
+            value={stats.devices.web}
+            subtitle="Web Active"
+            icon={MonitorSmartphone}
+            iconColor="text-violet-500"
             onClick={() => navigate('/devices?platform=Web')}
           />
         </div>
-      </div>
+      </section>
 
-      {/* SECONDARY METRICS: RECENT LISTS */}
+      {/* RECENT ACTIVITY FEEDS (3-COLUMN GRID) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* RECENT USERS */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <h3 className="font-semibold text-xs text-slate-200 uppercase tracking-wider">{AppStrings.Dashboard.sections.newRegistrations}</h3>
-            <button onClick={() => navigate('/users')} className="text-[10px] font-bold text-emerald-400 hover:underline">{AppStrings.Dashboard.sections.viewAll}</button>
-          </div>
-          <div className="divide-y divide-slate-800/60">
-            {recentUsers.length === 0 && (
-              <p className="text-xs text-slate-500 py-4 text-center">{AppStrings.Dashboard.sections.noRecentUsers}</p>
-            )}
-            {recentUsers.map((u: any) => (
-              <div key={u.id} onClick={() => navigate(`/users/${u.id}`)} className="py-2.5 flex items-center gap-3 cursor-pointer hover:bg-slate-800/30 px-2 rounded-xl transition-colors">
-                <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center shrink-0 text-[10px] font-bold text-slate-400">
-                  {u.full_name?.charAt(0)?.toUpperCase() || u.email?.charAt(0)?.toUpperCase() || '?'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-slate-200 truncate">{u.full_name || u.email || 'Unknown User'}</p>
-                  <p className="text-[10px] text-slate-500 truncate">{u.email || 'No email'}</p>
-                </div>
-              </div>
-            ))}
+        <div className="rounded-2xl bg-[var(--kb-surface)] border border-[var(--kb-border)] p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--kb-border)]">
+              <h3 className="text-xs font-black uppercase tracking-wider text-[var(--kb-text)]">
+                {AppStrings.Dashboard.sections.newRegistrations}
+              </h3>
+              <button
+                onClick={() => navigate('/users')}
+                className="text-[11px] font-bold text-[#F46A35] hover:underline"
+              >
+                {AppStrings.Dashboard.sections.viewAll}
+              </button>
+            </div>
+
+            <div className="divide-y divide-[var(--kb-border)]/50 pt-1">
+              {recentUsers.length === 0 ? (
+                <p className="text-xs text-[var(--kb-muted)] py-6 text-center">
+                  {AppStrings.Dashboard.sections.noRecentUsers}
+                </p>
+              ) : (
+                recentUsers.map((u: any) => (
+                  <div
+                    key={u.id}
+                    onClick={() => navigate(`/users/${u.id}`)}
+                    className="py-3 flex items-center gap-3 cursor-pointer hover:bg-[var(--kb-surface-subtle)] px-2 rounded-xl transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-[#F46A35]/10 border border-[#F46A35]/20 flex items-center justify-center font-bold text-xs text-[#F46A35] shrink-0">
+                      {u.full_name?.charAt(0)?.toUpperCase() || u.email?.charAt(0)?.toUpperCase() || '?'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-[var(--kb-text)] truncate">
+                        {u.full_name || u.email || 'Unknown User'}
+                      </p>
+                      <p className="text-[11px] text-[var(--kb-muted)] truncate">
+                        {u.email || 'No email provided'}
+                      </p>
+                    </div>
+                    <AdminStatusBadge status={u.status || 'active'} size="sm" />
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
-        {/* RECENT REQUESTS */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <h3 className="font-semibold text-xs text-slate-200 uppercase tracking-wider">{AppStrings.Dashboard.sections.recentPosts}</h3>
-            <button onClick={() => navigate('/requests')} className="text-[10px] font-bold text-emerald-400 hover:underline">{AppStrings.Dashboard.sections.viewAll}</button>
-          </div>
-          <div className="divide-y divide-slate-800/60">
-            {recentRequests.length === 0 && (
-              <p className="text-xs text-slate-500 py-4 text-center">{AppStrings.Dashboard.sections.noRecentPosts}</p>
-            )}
-            {recentRequests.map((r: any) => (
-              <div key={r.id} onClick={() => navigate(`/requests/${r.id}`)} className="py-3 flex items-center justify-between cursor-pointer hover:bg-slate-800/30 px-2 rounded-xl transition-colors">
-                <div className="flex-1 min-w-0 pr-3">
-                  <p className="text-xs font-semibold text-slate-200 truncate">
-                    {r.categories?.icon && <span className="mr-1">{r.categories.icon}</span>}
-                    {r.title || 'Untitled Post'}
-                  </p>
-                  <p className="text-[10px] text-slate-500 truncate mt-0.5">
-                    {r.location_name || 'Unknown Location'} • {r.profiles?.full_name || r.profiles?.email || 'Unknown User'}
-                  </p>
-                </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shrink-0">
-                  {r.status || 'open'}
-                </span>
-              </div>
-            ))}
+        {/* RECENT ACTIVITY POSTS */}
+        <div className="rounded-2xl bg-[var(--kb-surface)] border border-[var(--kb-border)] p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--kb-border)]">
+              <h3 className="text-xs font-black uppercase tracking-wider text-[var(--kb-text)]">
+                {AppStrings.Dashboard.sections.recentPosts}
+              </h3>
+              <button
+                onClick={() => navigate('/requests')}
+                className="text-[11px] font-bold text-[#F46A35] hover:underline"
+              >
+                {AppStrings.Dashboard.sections.viewAll}
+              </button>
+            </div>
+
+            <div className="divide-y divide-[var(--kb-border)]/50 pt-1">
+              {recentRequests.length === 0 ? (
+                <p className="text-xs text-[var(--kb-muted)] py-6 text-center">
+                  {AppStrings.Dashboard.sections.noRecentPosts}
+                </p>
+              ) : (
+                recentRequests.map((r: any) => (
+                  <div
+                    key={r.id}
+                    onClick={() => navigate(`/requests/${r.id}`)}
+                    className="py-3 flex items-center justify-between cursor-pointer hover:bg-[var(--kb-surface-subtle)] px-2 rounded-xl transition-colors gap-2"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-[var(--kb-text)] truncate">
+                        {r.categories?.icon && <span className="mr-1">{r.categories.icon}</span>}
+                        {r.title || 'Untitled Activity Post'}
+                      </p>
+                      <p className="text-[11px] text-[var(--kb-muted)] truncate mt-0.5">
+                        {r.location_name || 'Venue TBD'} • {r.profiles?.full_name || 'Member'}
+                      </p>
+                    </div>
+                    <AdminStatusBadge status={r.status || 'open'} size="sm" />
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
         {/* RECENT DEVICES */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-            <h3 className="font-semibold text-xs text-slate-200 uppercase tracking-wider">{AppStrings.Dashboard.sections.recentDevices}</h3>
-            <button onClick={() => navigate('/devices')} className="text-[10px] font-bold text-emerald-400 hover:underline">{AppStrings.Dashboard.sections.viewAll}</button>
-          </div>
-          <div className="divide-y divide-slate-800/60">
-            {recentDevices.length === 0 && (
-              <p className="text-xs text-slate-500 py-4 text-center">{AppStrings.Dashboard.sections.noRecentDevices}</p>
-            )}
-            {recentDevices.map((d: any) => (
-              <div key={d.id} onClick={() => navigate(`/users/${d.user_id}`)} className="py-2.5 flex flex-col justify-center cursor-pointer hover:bg-slate-800/30 px-2 rounded-xl transition-colors">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-slate-200">{d.device_model || 'Unknown Device'}</p>
-                  <span className="text-[9px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">{d.platform || 'Unknown'}</span>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  {AppStrings.Dashboard.sections.userLabel}{d.profiles?.full_name || d.profiles?.email || 'Unknown User'}
+        <div className="rounded-2xl bg-[var(--kb-surface)] border border-[var(--kb-border)] p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--kb-border)]">
+              <h3 className="text-xs font-black uppercase tracking-wider text-[var(--kb-text)]">
+                {AppStrings.Dashboard.sections.recentDevices}
+              </h3>
+              <button
+                onClick={() => navigate('/devices')}
+                className="text-[11px] font-bold text-[#F46A35] hover:underline"
+              >
+                {AppStrings.Dashboard.sections.viewAll}
+              </button>
+            </div>
+
+            <div className="divide-y divide-[var(--kb-border)]/50 pt-1">
+              {recentDevices.length === 0 ? (
+                <p className="text-xs text-[var(--kb-muted)] py-6 text-center">
+                  {AppStrings.Dashboard.sections.noRecentDevices}
                 </p>
-              </div>
-            ))}
+              ) : (
+                recentDevices.map((d: any) => (
+                  <div
+                    key={d.id}
+                    onClick={() => navigate(`/users/${d.user_id}`)}
+                    className="py-3 flex flex-col justify-center cursor-pointer hover:bg-[var(--kb-surface-subtle)] px-2 rounded-xl transition-colors"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs font-bold text-[var(--kb-text)] truncate">
+                        {d.device_model || 'Unknown Device'}
+                      </p>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] text-[var(--kb-text)]">
+                        {d.platform || 'Unknown'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[var(--kb-muted)] truncate mt-1">
+                      {AppStrings.Dashboard.sections.userLabel}
+                      <span className="font-semibold text-[var(--kb-text)]">
+                        {d.profiles?.full_name || d.profiles?.email || d.user_id?.substring(0, 8)}
+                      </span>
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 

@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { Send, Users } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
+import { useNavigate } from 'react-router-dom';
 import { AppStrings } from '@/core/constants/app_strings';
+import { 
+  AdminPageHeader, AdminDataTable, AdminStatusBadge, type Column 
+} from '@/components/brand';
 
 export function NotificationHistoryPage() {
+  const navigate = useNavigate();
   const [list, setList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,54 +19,82 @@ export function NotificationHistoryPage() {
     });
   }, []);
 
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 tracking-tight">{AppStrings.Notifications.history.title}</h1>
-        <p className="text-xs text-slate-400 mt-0.5">{AppStrings.Notifications.history.subtitle}</p>
-      </div>
+  const columns: Column<any>[] = [
+    {
+      header: AppStrings.Notifications.history.tableHeaders.titleMessage,
+      accessor: (n) => (
+        <div>
+          <p className="font-bold text-[var(--kb-text)] text-xs sm:text-sm">
+            {n.title}
+          </p>
+          <p className="text-xs text-[var(--kb-muted)] max-w-sm truncate mt-0.5">
+            {n.message}
+          </p>
+        </div>
+      ),
+    },
+    {
+      header: AppStrings.Notifications.history.tableHeaders.audience,
+      accessor: (n) => (
+        <span className="capitalize text-[var(--kb-text)] font-semibold text-xs font-mono">
+          {n.target_audience}
+        </span>
+      ),
+    },
+    {
+      header: AppStrings.Notifications.history.tableHeaders.count,
+      accessor: (n) => (
+        <span className="inline-flex items-center gap-1 font-mono font-bold text-[#F46A35] text-xs">
+          <Users className="w-3.5 h-3.5" />
+          <span>{n.sent_count ?? 0}</span>
+        </span>
+      ),
+    },
+    {
+      header: AppStrings.Notifications.history.tableHeaders.status,
+      accessor: (n) => (
+        <AdminStatusBadge status={n.status || 'sent'} size="sm" />
+      ),
+    },
+    {
+      header: AppStrings.Notifications.history.tableHeaders.sentAt,
+      accessor: (n) => (
+        <span className="text-xs text-[var(--kb-muted)] font-mono">
+          {new Date(n.created_at).toLocaleString()}
+        </span>
+      ),
+    },
+  ];
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" /> {AppStrings.Notifications.history.loading}
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
-                <tr>
-                  <th className="px-4 py-3">{AppStrings.Notifications.history.tableHeaders.titleMessage}</th>
-                  <th className="px-4 py-3">{AppStrings.Notifications.history.tableHeaders.audience}</th>
-                  <th className="px-4 py-3">{AppStrings.Notifications.history.tableHeaders.count}</th>
-                  <th className="px-4 py-3">{AppStrings.Notifications.history.tableHeaders.status}</th>
-                  <th className="px-4 py-3">{AppStrings.Notifications.history.tableHeaders.sentAt}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {list.map((n) => (
-                  <tr key={n.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-slate-200">{n.title}</p>
-                      <p className="text-[10px] text-slate-400 max-w-xs truncate">{n.message}</p>
-                    </td>
-                    <td className="px-4 py-3 capitalize text-slate-300 font-mono text-[11px]">{n.target_audience}</td>
-                    <td className="px-4 py-3 text-emerald-400 font-mono font-bold text-[11px]">{n.sent_count}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
-                        {n.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-400 text-[11px]">
-                      {new Date(n.created_at).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      <AdminPageHeader
+        title={AppStrings.Notifications.history.title}
+        subtitle={AppStrings.Notifications.history.subtitle}
+        actions={
+          <button
+            onClick={() => navigate('/notifications')}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-white bg-[#F46A35] hover:bg-[#DC5425] shadow-md shadow-[#F46A35]/20 transition-all hover:-translate-y-0.5"
+          >
+            <Send className="w-4 h-4" />
+            <span>Send New Broadcast</span>
+          </button>
+        }
+      />
+
+      <AdminDataTable
+        columns={columns}
+        data={list}
+        keyExtractor={(n) => n.id}
+        loading={loading}
+        emptyType="empty_notifications"
+        emptyTitle="No notification logs"
+        emptyDescription="Broadcast announcements to players will be logged here."
+        emptyAction={{
+          label: 'Send Broadcast',
+          onClick: () => navigate('/notifications'),
+        }}
+      />
     </div>
   );
 }

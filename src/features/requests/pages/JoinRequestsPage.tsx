@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, RefreshCw, ChevronDown } from 'lucide-react';
+import { ChevronDown, UserPlus } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { AppStrings } from '@/core/constants/app_strings';
+import { 
+  AdminPageHeader, AdminSearchBar, AdminStatusBadge, 
+  AdminDataTable, type Column 
+} from '@/components/brand';
 
 export function JoinRequestsPage() {
   const [search, setSearch] = useState('');
@@ -23,78 +27,107 @@ export function JoinRequestsPage() {
     };
   }, [search, status, page]);
 
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 tracking-tight">{AppStrings.JoinRequests.title}</h1>
-        <p className="text-xs text-slate-400 mt-0.5">{AppStrings.JoinRequests.subtitle}</p>
-      </div>
-
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => { setLoading(true); setSearch(e.target.value); setPage(1); }}
-            placeholder={AppStrings.JoinRequests.searchPlaceholder}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
-          />
+  const columns: Column<any>[] = [
+    {
+      header: AppStrings.JoinRequests.tableHeaders.applicant,
+      accessor: (j) => (
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-xl bg-[#F46A35]/10 border border-[#F46A35]/20 flex items-center justify-center font-bold text-xs text-[#F46A35] shrink-0">
+            <UserPlus className="w-4 h-4" />
+          </div>
+          <span className="font-bold text-[var(--kb-text)] text-xs sm:text-sm">
+            {j.applicant_name || 'Member'}
+          </span>
         </div>
+      ),
+    },
+    {
+      header: AppStrings.JoinRequests.tableHeaders.targetPost,
+      accessor: (j) => (
+        <span className="font-semibold text-[var(--kb-text)] max-w-xs truncate block">
+          {j.request_title || 'Untitled Activity'}
+        </span>
+      ),
+    },
+    {
+      header: AppStrings.JoinRequests.tableHeaders.postOwner,
+      accessor: (j) => (
+        <span className="text-xs text-[var(--kb-muted)]">
+          {j.owner_name || 'System Admin'}
+        </span>
+      ),
+    },
+    {
+      header: AppStrings.JoinRequests.tableHeaders.note,
+      accessor: (j) => (
+        <span className="text-xs text-[var(--kb-muted)] max-w-xs truncate block italic">
+          {j.note || 'No note attached'}
+        </span>
+      ),
+    },
+    {
+      header: AppStrings.JoinRequests.tableHeaders.status,
+      accessor: (j) => (
+        <AdminStatusBadge status={j.status || 'pending'} size="sm" />
+      ),
+    },
+  ];
 
-        <div className="relative">
+  return (
+    <div className="space-y-6 max-w-7xl mx-auto pb-12">
+      {/* Page Header */}
+      <AdminPageHeader
+        title={AppStrings.JoinRequests.title}
+        subtitle={AppStrings.JoinRequests.subtitle}
+      />
+
+      {/* Filter and Search Container */}
+      <div className="p-4 rounded-2xl bg-[var(--kb-surface)] border border-[var(--kb-border)] flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between shadow-xs">
+        <AdminSearchBar
+          value={search}
+          onChange={(val) => {
+            setSearch(val);
+            setPage(1);
+          }}
+          placeholder={AppStrings.JoinRequests.searchPlaceholder}
+          className="flex-1"
+        />
+
+        <div className="relative shrink-0">
           <select
             value={status}
-            onChange={(e) => { setLoading(true); setStatus(e.target.value); setPage(1); }}
-            className="w-full sm:w-auto appearance-none bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500 cursor-pointer"
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+            className="w-full sm:w-auto appearance-none bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] rounded-xl pl-3.5 pr-9 py-2.5 text-xs sm:text-sm text-[var(--kb-text)] focus:outline-none focus:border-[#F46A35] cursor-pointer font-semibold"
           >
             <option value="all">{AppStrings.JoinRequests.filters.all}</option>
             <option value="pending">Pending</option>
             <option value="accepted">Accepted</option>
             <option value="rejected">Rejected</option>
           </select>
-          <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+          <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-[var(--kb-muted)] pointer-events-none" />
         </div>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
-            <RefreshCw className="w-4 h-4 animate-spin text-emerald-400" /> {AppStrings.JoinRequests.loading}
-          </div>
-        ) : data.joinRequests.length === 0 ? (
-          <div className="p-12 text-center text-slate-500 text-xs">{AppStrings.JoinRequests.noData}</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950/80 border-b border-slate-800 text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
-                <tr>
-                  <th className="px-4 py-3">{AppStrings.JoinRequests.tableHeaders.applicant}</th>
-                  <th className="px-4 py-3">{AppStrings.JoinRequests.tableHeaders.targetPost}</th>
-                  <th className="px-4 py-3">{AppStrings.JoinRequests.tableHeaders.postOwner}</th>
-                  <th className="px-4 py-3">{AppStrings.JoinRequests.tableHeaders.note}</th>
-                  <th className="px-4 py-3">{AppStrings.JoinRequests.tableHeaders.status}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {data.joinRequests.map((j) => (
-                  <tr key={j.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-slate-200">{j.applicant_name}</td>
-                    <td className="px-4 py-3 text-slate-300">{j.request_title}</td>
-                    <td className="px-4 py-3 text-slate-400">{j.owner_name}</td>
-                    <td className="px-4 py-3 text-slate-400 text-[11px] max-w-xs truncate">{j.note || 'None'}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-800 text-emerald-400 border border-slate-700">
-                        {j.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      {/* Data Table */}
+      <AdminDataTable
+        columns={columns}
+        data={data.joinRequests}
+        keyExtractor={(j) => j.id}
+        loading={loading}
+        emptyType="empty_activities"
+        emptyTitle={AppStrings.JoinRequests.noData}
+        emptyDescription="No join applications match your filter."
+        pagination={{
+          currentPage: page,
+          totalPages: data.totalPages,
+          totalItems: data.total,
+          pageSize: 8,
+          onPageChange: (newPage) => setPage(newPage),
+        }}
+      />
     </div>
   );
 }

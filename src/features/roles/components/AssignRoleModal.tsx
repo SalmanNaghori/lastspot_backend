@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { adminRepo } from '@/lib/adminRepo';
 import { AppStrings } from '@/core/constants/app_strings';
 import { Search, Loader2 } from 'lucide-react';
+import { AdminModal } from '@/components/brand/AdminModal';
 
 interface AssignRoleModalProps {
   isOpen: boolean;
@@ -38,7 +39,7 @@ export function AssignRoleModal({ isOpen, onClose, onAssigned, showToast }: Assi
       showToast(AppStrings.AdminRoles.alerts.selectUser, 'warning');
       return;
     }
-    
+
     setSubmitting(true);
     try {
       await adminRepo.assignRole(selectedUser.id, role);
@@ -52,146 +53,142 @@ export function AssignRoleModal({ isOpen, onClose, onAssigned, showToast }: Assi
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl text-slate-100">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-          <h3 className="font-bold text-lg">{AppStrings.AdminRoles.modal.title}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-200">✕</button>
+    <AdminModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={AppStrings.AdminRoles.modal.title}
+      maxWidth="md"
+    >
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label className="block text-xs text-[var(--kb-text)] mb-2 font-semibold">
+            {AppStrings.AdminRoles.modal.selectUserLabel}
+          </label>
+          {!selectedUser ? (
+            <div className="relative">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-[var(--kb-muted)]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  const q = e.target.value;
+                  setSearchQuery(q);
+                  if (!q.trim()) setSearchResults([]);
+                }}
+                placeholder={AppStrings.AdminRoles.modal.searchPlaceholder}
+                className="w-full bg-[var(--kb-subtle)] border border-[var(--kb-border)] rounded-xl pl-9 pr-4 py-2.5 text-sm text-[var(--kb-text)] placeholder-[var(--kb-muted)] focus:outline-none focus:border-[#F46A35]"
+              />
+
+              {searchQuery && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[var(--kb-surface)] border border-[var(--kb-border)] rounded-xl shadow-xl max-h-48 overflow-y-auto z-10">
+                  {loading ? (
+                    <div className="p-4 flex justify-center text-[#F46A35]">
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    </div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="py-2 divide-y divide-[var(--kb-border)]/50">
+                      {searchResults.map((u) => (
+                        <div
+                          key={u.id}
+                          onClick={() => setSelectedUser(u)}
+                          className="px-4 py-2.5 hover:bg-[var(--kb-subtle)] cursor-pointer flex items-center gap-3 transition-colors"
+                        >
+                          <img src={u.avatar_url || 'https://via.placeholder.com/40'} alt="" className="w-8 h-8 rounded-full object-cover bg-[var(--kb-subtle)] border border-[var(--kb-border)]" />
+                          <div>
+                            <p className="text-sm font-semibold text-[var(--kb-text)]">{u.full_name || 'User'}</p>
+                            <p className="text-xs text-[var(--kb-muted)]">{u.email || 'No email'}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 text-center text-xs text-[var(--kb-muted)]">
+                      {AppStrings.AdminRoles.modal.noUsers}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between bg-[var(--kb-subtle)] border border-[var(--kb-border)] rounded-xl p-3">
+              <div className="flex items-center gap-3">
+                <img src={selectedUser.avatar_url || 'https://via.placeholder.com/40'} alt="" className="w-10 h-10 rounded-full object-cover bg-[var(--kb-surface)] border border-[var(--kb-border)]" />
+                <div>
+                  <p className="text-sm font-semibold text-[var(--kb-text)]">{selectedUser.full_name || 'Selected User'}</p>
+                  <p className="text-xs text-[var(--kb-muted)]">{selectedUser.email || 'No email'}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setSelectedUser(null); setSearchQuery(''); }}
+                className="text-xs text-rose-500 hover:underline font-bold"
+              >
+                Change
+              </button>
+            </div>
+          )}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-xs text-slate-300 mb-2 font-semibold">
-              {AppStrings.AdminRoles.modal.selectUserLabel}
+        <div>
+          <label className="block text-xs text-[var(--kb-text)] mb-2 font-semibold">
+            {AppStrings.AdminRoles.modal.selectRoleLabel}
+          </label>
+          <div className="grid grid-cols-3 gap-3">
+            <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-all text-xs ${role === 'super_admin' ? 'bg-[#F46A35]/15 border-[#F46A35] text-[#F46A35] font-bold shadow-sm' : 'bg-[var(--kb-subtle)] border-[var(--kb-border)] text-[var(--kb-muted)] hover:text-[var(--kb-text)]'}`}>
+              <input
+                type="radio"
+                name="role"
+                value="super_admin"
+                checked={role === 'super_admin'}
+                onChange={() => setRole('super_admin')}
+                className="hidden"
+              />
+              Super Admin
             </label>
-            {!selectedUser ? (
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-500" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    const q = e.target.value;
-                    setSearchQuery(q);
-                    if (!q.trim()) setSearchResults([]);
-                  }}
-                  placeholder={AppStrings.AdminRoles.modal.searchPlaceholder}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500"
-                />
-                
-                {searchQuery && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-slate-950 border border-slate-800 rounded-xl shadow-xl max-h-48 overflow-y-auto z-10">
-                    {loading ? (
-                      <div className="p-4 flex justify-center text-emerald-500">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                      </div>
-                    ) : searchResults.length > 0 ? (
-                      <div className="py-2">
-                        {searchResults.map((u) => (
-                          <div 
-                            key={u.id}
-                            onClick={() => setSelectedUser(u)}
-                            className="px-4 py-2 hover:bg-slate-800 cursor-pointer flex items-center gap-3"
-                          >
-                            <img src={u.avatar_url || 'https://via.placeholder.com/40'} alt="" className="w-8 h-8 rounded-full object-cover bg-slate-800" />
-                            <div>
-                              <p className="text-sm font-semibold text-slate-200">{u.full_name}</p>
-                              <p className="text-[10px] text-slate-500">{u.email}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-xs text-slate-500">
-                        {AppStrings.AdminRoles.modal.noUsers}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-xl p-3">
-                <div className="flex items-center gap-3">
-                  <img src={selectedUser.avatar_url || 'https://via.placeholder.com/40'} alt="" className="w-10 h-10 rounded-full object-cover bg-slate-800" />
-                  <div>
-                    <p className="text-sm font-semibold text-slate-200">{selectedUser.full_name}</p>
-                    <p className="text-xs text-slate-500">{selectedUser.email}</p>
-                  </div>
-                </div>
-                <button 
-                  type="button"
-                  onClick={() => { setSelectedUser(null); setSearchQuery(''); }}
-                  className="text-xs text-rose-400 hover:text-rose-300 font-bold"
-                >
-                  Change
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-xs text-slate-300 mb-2 font-semibold">
-              {AppStrings.AdminRoles.modal.selectRoleLabel}
+            <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-all text-xs ${role === 'admin' ? 'bg-[#FFB45E]/20 border-[#FFB45E] text-[#DC5425] font-bold shadow-sm' : 'bg-[var(--kb-subtle)] border-[var(--kb-border)] text-[var(--kb-muted)] hover:text-[var(--kb-text)]'}`}>
+              <input
+                type="radio"
+                name="role"
+                value="admin"
+                checked={role === 'admin'}
+                onChange={() => setRole('admin')}
+                className="hidden"
+              />
+              {AppStrings.AdminRoles.roles.admin}
             </label>
-            <div className="grid grid-cols-3 gap-3">
-              <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-colors text-xs ${role === 'super_admin' ? 'bg-amber-500/10 border-amber-500/50 text-amber-400 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
-                <input 
-                  type="radio" 
-                  name="role" 
-                  value="super_admin" 
-                  checked={role === 'super_admin'} 
-                  onChange={() => setRole('super_admin')} 
-                  className="hidden"
-                />
-                Super Admin
-              </label>
-              <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-colors text-xs ${role === 'admin' ? 'bg-purple-500/10 border-purple-500/50 text-purple-400 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
-                <input 
-                  type="radio" 
-                  name="role" 
-                  value="admin" 
-                  checked={role === 'admin'} 
-                  onChange={() => setRole('admin')} 
-                  className="hidden"
-                />
-                {AppStrings.AdminRoles.roles.admin}
-              </label>
-              <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-colors text-xs ${role === 'moderator' ? 'bg-blue-500/10 border-blue-500/50 text-blue-400 font-bold' : 'bg-slate-950 border-slate-800 text-slate-400'}`}>
-                <input 
-                  type="radio" 
-                  name="role" 
-                  value="moderator" 
-                  checked={role === 'moderator'} 
-                  onChange={() => setRole('moderator')} 
-                  className="hidden"
-                />
-                {AppStrings.AdminRoles.roles.moderator}
-              </label>
-            </div>
+            <label className={`flex items-center justify-center py-3 border rounded-xl cursor-pointer transition-all text-xs ${role === 'moderator' ? 'bg-blue-500/15 border-blue-500 text-blue-500 font-bold shadow-sm' : 'bg-[var(--kb-subtle)] border-[var(--kb-border)] text-[var(--kb-muted)] hover:text-[var(--kb-text)]'}`}>
+              <input
+                type="radio"
+                name="role"
+                value="moderator"
+                checked={role === 'moderator'}
+                onChange={() => setRole('moderator')}
+                className="hidden"
+              />
+              {AppStrings.AdminRoles.roles.moderator}
+            </label>
           </div>
+        </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition-colors"
-            >
-              {AppStrings.AdminRoles.modal.cancelBtn}
-            </button>
-            <button
-              type="submit"
-              disabled={submitting || !selectedUser}
-              className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-            >
-              {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
-              {AppStrings.AdminRoles.modal.assignBtn}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <div className="flex justify-end gap-3 pt-4 border-t border-[var(--kb-border)]">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-[var(--kb-subtle)] hover:bg-[var(--kb-border)] text-[var(--kb-text)] text-sm font-semibold transition-colors border border-[var(--kb-border)]"
+          >
+            {AppStrings.AdminRoles.modal.cancelBtn}
+          </button>
+          <button
+            type="submit"
+            disabled={submitting || !selectedUser}
+            className="px-5 py-2 rounded-xl bg-gradient-to-r from-[#F46A35] to-[#FFB45E] hover:opacity-95 text-white text-sm font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md shadow-[#F46A35]/20"
+          >
+            {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
+            {AppStrings.AdminRoles.modal.assignBtn}
+          </button>
+        </div>
+      </form>
+    </AdminModal>
   );
 }

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { adminRepo } from '@/lib/adminRepo';
 import { AppStrings } from '@/core/constants/app_strings';
-import { Shield, ShieldAlert, Key, Users, Loader2, Trash2, UserPlus } from 'lucide-react';
+import { Shield, ShieldAlert, Key, Users, Trash2, UserPlus } from 'lucide-react';
 import { AssignRoleModal } from '../components/AssignRoleModal';
 import { CreateAdminModal } from '../components/CreateAdminModal';
 import { useToast } from '@/app/providers/ToastProvider';
 import { useRBAC } from '@/app/providers/useRBAC';
+import { AdminPageHeader, AdminStatCard, AdminDataTable, type Column } from '@/components/brand';
 
 export function AdminRolesPage() {
   const [roles, setRoles] = useState<any[]>([]);
@@ -50,152 +51,134 @@ export function AdminRolesPage() {
   const modCount = roles.filter(r => r.role === 'moderator').length;
   const totalStaff = roles.length;
 
+  const columns: Column<any>[] = [
+    {
+      header: AppStrings.AdminRoles.tableHeaders.user,
+      accessor: (r: any) => (
+        <div className="flex items-center gap-3">
+          <img 
+            src={r.user?.avatar_url || 'https://via.placeholder.com/40'} 
+            alt="" 
+            className="w-10 h-10 rounded-full object-cover bg-[var(--kb-subtle)] border border-[var(--kb-border)]"
+          />
+          <div>
+            <p className="font-semibold text-[var(--kb-text)]">{r.user?.full_name || 'Admin User'}</p>
+            <p className="text-xs text-[var(--kb-muted)]">{r.user?.email || 'No email recorded'}</p>
+          </div>
+        </div>
+      )
+    },
+    {
+      header: AppStrings.AdminRoles.tableHeaders.role,
+      accessor: (r: any) => {
+        if (r.role === 'super_admin') {
+          return (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#F46A35]/15 text-[#F46A35] border border-[#F46A35]/30">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              Super Admin
+            </span>
+          );
+        }
+        if (r.role === 'admin') {
+          return (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#FFB45E]/20 text-[#DC5425] border border-[#FFB45E]/40">
+              <ShieldAlert className="w-3.5 h-3.5" />
+              {AppStrings.AdminRoles.roles.admin}
+            </span>
+          );
+        }
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
+            <Shield className="w-3.5 h-3.5" />
+            {AppStrings.AdminRoles.roles.moderator}
+          </span>
+        );
+      }
+    },
+    {
+      header: AppStrings.AdminRoles.tableHeaders.assignedDate,
+      accessor: (r: any) => (
+        <span className="text-xs text-[var(--kb-muted)] font-medium">
+          {r.assigned_at ? new Date(r.assigned_at).toLocaleDateString() : '—'}
+        </span>
+      )
+    },
+    {
+      header: AppStrings.AdminRoles.tableHeaders.actions,
+      className: 'text-right',
+      accessor: (r: any) => isSuperAdmin ? (
+        <button
+          onClick={() => handleRevoke(r.user?.id, r.role)}
+          className="p-2 text-[var(--kb-muted)] hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-colors inline-flex"
+          title={AppStrings.AdminRoles.actions.revoke}
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      ) : null
+    }
+  ];
+
   return (
     <div className="space-y-6">
       {/* HEADER & ACTIONS */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-purple-500" />
-            {AppStrings.AdminRoles.title}
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">{AppStrings.AdminRoles.subtitle}</p>
-        </div>
-        
-        {isSuperAdmin && (
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg"
-            >
-              <UserPlus className="w-4 h-4 text-emerald-400" />
-              Create New Admin
-            </button>
-            <button
-              onClick={() => setIsAssignModalOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-lg shadow-emerald-900/20"
-            >
-              <Key className="w-4 h-4" />
-              {AppStrings.AdminRoles.assignRoleBtn}
-            </button>
-          </div>
-        )}
-      </div>
+      <AdminPageHeader
+        title={AppStrings.AdminRoles.title}
+        subtitle={AppStrings.AdminRoles.subtitle}
+        badge={`${totalStaff} Active Staff`}
+        actions={
+          isSuperAdmin ? (
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-[var(--kb-surface)] border border-[var(--kb-border)] hover:bg-[var(--kb-subtle)] text-[var(--kb-text)] px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2 shadow-sm"
+              >
+                <UserPlus className="w-4 h-4 text-[#F46A35]" />
+                Create New Admin
+              </button>
+              <button
+                onClick={() => setIsAssignModalOpen(true)}
+                className="bg-gradient-to-r from-[#F46A35] to-[#FFB45E] hover:opacity-95 text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-md shadow-[#F46A35]/20"
+              >
+                <Key className="w-4 h-4" />
+                {AppStrings.AdminRoles.assignRoleBtn}
+              </button>
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* KPI CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20 text-purple-500">
-            <ShieldAlert className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 font-medium">{AppStrings.AdminRoles.cards.superAdmins}</p>
-            <p className="text-2xl font-bold text-slate-100">{adminCount}</p>
-          </div>
-        </div>
-
-        <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-500">
-            <Shield className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 font-medium">{AppStrings.AdminRoles.cards.moderators}</p>
-            <p className="text-2xl font-bold text-slate-100">{modCount}</p>
-          </div>
-        </div>
-
-        <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-500">
-            <Users className="w-6 h-6" />
-          </div>
-          <div>
-            <p className="text-sm text-slate-400 font-medium">{AppStrings.AdminRoles.cards.totalStaff}</p>
-            <p className="text-2xl font-bold text-slate-100">{totalStaff}</p>
-          </div>
-        </div>
+        <AdminStatCard
+          title={AppStrings.AdminRoles.cards.superAdmins}
+          value={adminCount}
+          icon={ShieldAlert}
+          subtitle="Full admin privileges"
+        />
+        <AdminStatCard
+          title={AppStrings.AdminRoles.cards.moderators}
+          value={modCount}
+          icon={Shield}
+          subtitle="Content moderation scope"
+        />
+        <AdminStatCard
+          title={AppStrings.AdminRoles.cards.totalStaff}
+          value={totalStaff}
+          icon={Users}
+          subtitle="All platform managers"
+        />
       </div>
 
       {/* DATA TABLE */}
-      <div className="bg-slate-900/50 border border-slate-800/80 rounded-2xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-800/50 text-slate-200 text-xs uppercase font-semibold">
-              <tr>
-                <th className="px-6 py-4">{AppStrings.AdminRoles.tableHeaders.user}</th>
-                <th className="px-6 py-4">{AppStrings.AdminRoles.tableHeaders.role}</th>
-                <th className="px-6 py-4">{AppStrings.AdminRoles.tableHeaders.assignedDate}</th>
-                <th className="px-6 py-4 text-right">{AppStrings.AdminRoles.tableHeaders.actions}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/50">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-emerald-500 mx-auto mb-3" />
-                    <p className="text-slate-400">{AppStrings.AdminRoles.loading}</p>
-                  </td>
-                </tr>
-              ) : roles.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-slate-400">
-                    No roles assigned yet.
-                  </td>
-                </tr>
-              ) : (
-                roles.map((r) => (
-                  <tr key={r.id} className="hover:bg-slate-800/30 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <img 
-                          src={r.user?.avatar_url || 'https://via.placeholder.com/40'} 
-                          alt="" 
-                          className="w-10 h-10 rounded-full object-cover bg-slate-800"
-                        />
-                        <div>
-                          <p className="font-semibold text-slate-200">{r.user?.full_name}</p>
-                          <p className="text-xs text-slate-500">{r.user?.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {r.role === 'super_admin' ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                          <ShieldAlert className="w-3.5 h-3.5" />
-                          Super Admin
-                        </span>
-                      ) : r.role === 'admin' ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
-                          <ShieldAlert className="w-3.5 h-3.5" />
-                          {AppStrings.AdminRoles.roles.admin}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                          <Shield className="w-3.5 h-3.5" />
-                          {AppStrings.AdminRoles.roles.moderator}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-slate-400">
-                      {new Date(r.assigned_at).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {isSuperAdmin && (
-                        <button
-                          onClick={() => handleRevoke(r.user?.id, r.role)}
-                          className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-xl transition-colors inline-flex"
-                          title={AppStrings.AdminRoles.actions.revoke}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <AdminDataTable
+        columns={columns}
+        data={roles}
+        loading={loading}
+        keyExtractor={(r: any) => r.id}
+        emptyType="empty_users"
+        emptyTitle="No roles assigned yet"
+        emptyDescription="Platform administrators and moderators will appear here once designated."
+      />
 
       <AssignRoleModal 
         isOpen={isAssignModalOpen}

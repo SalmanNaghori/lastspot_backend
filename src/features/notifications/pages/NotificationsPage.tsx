@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Send, Info, ChevronDown } from 'lucide-react';
+import { Send, Info, ChevronDown, History } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { useNavigate } from 'react-router-dom';
 import { AppStrings } from '@/core/constants/app_strings';
 import { useToast } from '@/app/providers/ToastProvider';
+import { AdminPageHeader, AdminFormField } from '@/components/brand';
 
 export function NotificationsPage() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export function NotificationsPage() {
       message,
       target_audience: targetAudience,
       status: schedule ? 'scheduled' : 'sent',
-      scheduled_at: schedule || null
+      scheduled_at: schedule || null,
     });
     showToast(schedule ? 'Notification scheduled successfully!' : 'Broadcast notification sent!', 'success');
     setTitle('');
@@ -49,79 +50,85 @@ export function NotificationsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100 tracking-tight">{AppStrings.Notifications.title}</h1>
-        <p className="text-xs text-slate-400 mt-0.5">{AppStrings.Notifications.subtitle}</p>
-      </div>
+    <div className="space-y-6 max-w-4xl mx-auto pb-12">
+      <AdminPageHeader
+        title={AppStrings.Notifications.title}
+        subtitle={AppStrings.Notifications.subtitle}
+        actions={
+          <button
+            onClick={() => navigate('/notifications-history')}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-[var(--kb-text)] bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] hover:border-[#F46A35] hover:text-[#F46A35] transition-colors"
+          >
+            <History className="w-4 h-4" />
+            <span>View Logs</span>
+          </button>
+        }
+      />
 
-      <form onSubmit={handleSend} className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4 text-xs">
-        <div>
-          <label className="block text-slate-300 mb-1 font-semibold">{AppStrings.Notifications.form.titleLabel}</label>
+      <form onSubmit={handleSend} className="bg-[var(--kb-surface)] border border-[var(--kb-border)] rounded-3xl p-6 sm:p-8 space-y-5 shadow-sm">
+        <AdminFormField label={AppStrings.Notifications.form.titleLabel} required>
           <input
             type="text"
             required
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={AppStrings.Notifications.form.titlePlaceholder}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] rounded-xl p-3.5 text-xs sm:text-sm text-[var(--kb-text)] placeholder-[var(--kb-muted)] focus:outline-none focus:border-[#F46A35] font-semibold"
           />
-        </div>
+        </AdminFormField>
 
-        <div>
-          <label className="block text-slate-300 mb-1 font-semibold">{AppStrings.Notifications.form.messageLabel}</label>
+        <AdminFormField label={AppStrings.Notifications.form.messageLabel} required>
           <textarea
             rows={4}
             required
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             placeholder={AppStrings.Notifications.form.messagePlaceholder}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100 focus:outline-none focus:border-emerald-500"
+            className="w-full bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] rounded-xl p-3.5 text-xs sm:text-sm text-[var(--kb-text)] placeholder-[var(--kb-muted)] focus:outline-none focus:border-[#F46A35]"
           />
-        </div>
+        </AdminFormField>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-slate-300 mb-1 font-semibold">{AppStrings.Notifications.form.audienceLabel}</label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <AdminFormField label={AppStrings.Notifications.form.audienceLabel}>
             <div className="relative">
               <select
                 value={targetAudience}
                 onChange={(e) => setTargetAudience(e.target.value)}
-                className="w-full appearance-none bg-slate-950 border border-slate-800 rounded-xl p-3 pr-9 text-slate-100 cursor-pointer"
+                className="w-full appearance-none bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] rounded-xl p-3.5 pr-9 text-xs sm:text-sm text-[var(--kb-text)] cursor-pointer focus:outline-none focus:border-[#F46A35] font-semibold"
               >
                 <option value="all">{AppStrings.Notifications.audiences.all}</option>
                 <option value="category">{AppStrings.Notifications.audiences.category}</option>
                 <option value="location">{AppStrings.Notifications.audiences.location}</option>
               </select>
-              <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              <ChevronDown className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--kb-muted)] pointer-events-none" />
             </div>
-          </div>
+          </AdminFormField>
 
-          <div>
-            <label className="block text-slate-300 mb-1 font-semibold">{AppStrings.Notifications.form.scheduleLabel}</label>
+          <AdminFormField label={AppStrings.Notifications.form.scheduleLabel}>
             <input
               type="datetime-local"
               value={schedule}
               min={getMinDateTime()}
               onChange={(e) => setSchedule(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-100"
-              style={{ colorScheme: 'dark' }}
+              className="w-full bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] rounded-xl p-3 text-xs sm:text-sm text-[var(--kb-text)] focus:outline-none focus:border-[#F46A35]"
             />
-          </div>
+          </AdminFormField>
         </div>
 
-        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-amber-300 text-[11px] flex items-center gap-2">
-          <Info className="w-4 h-4 shrink-0 text-amber-400" />
+        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-amber-700 dark:text-amber-300 text-xs flex items-center gap-2.5">
+          <Info className="w-4 h-4 shrink-0 text-amber-500" />
           <span>{AppStrings.Notifications.form.infoBox}</span>
         </div>
 
-        <button
-          type="submit"
-          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl shadow-lg transition-colors flex items-center gap-2"
-        >
-          <Send className="w-4 h-4" />
-          <span>{schedule ? AppStrings.Notifications.form.scheduleBtn : AppStrings.Notifications.form.sendBtn}</span>
-        </button>
+        <div className="pt-2">
+          <button
+            type="submit"
+            className="px-6 py-3.5 bg-[#F46A35] hover:bg-[#DC5425] text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-[#F46A35]/20 transition-all flex items-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
+          >
+            <Send className="w-4 h-4" />
+            <span>{schedule ? AppStrings.Notifications.form.scheduleBtn : AppStrings.Notifications.form.sendBtn}</span>
+          </button>
+        </div>
       </form>
     </div>
   );
