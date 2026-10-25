@@ -11,12 +11,12 @@ export function ToastNotification({ message, type = 'success' }: ToastProps) {
     <div
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-2xl shadow-2xl border text-xs font-semibold backdrop-blur-md transition-all duration-300 animate-toast-slide ${
         type === 'error'
-          ? 'bg-rose-950/90 text-rose-200 border-rose-800/80 shadow-rose-950/50'
+          ? 'bg-rose-950/90 text-rose-200 border-rose-800/80 shadow-rose-950/40'
           : type === 'warning'
-          ? 'bg-amber-950/90 text-amber-200 border-amber-800/80 shadow-amber-950/50'
+          ? 'bg-amber-950/90 text-amber-200 border-amber-800/80 shadow-amber-950/40'
           : type === 'success'
-          ? 'bg-emerald-950/90 text-emerald-200 border-emerald-800/80 shadow-emerald-950/50'
-          : 'bg-slate-900/90 text-slate-100 border-slate-700/80 shadow-slate-950/50'
+          ? 'bg-[#12141B]/95 text-[#FFF8F1] border-[#F46A35]/60 shadow-[#F46A35]/20'
+          : 'bg-[var(--kb-surface)] text-[var(--kb-text)] border-[var(--kb-border)] shadow-xl'
       }`}
     >
       <div
@@ -26,8 +26,8 @@ export function ToastNotification({ message, type = 'success' }: ToastProps) {
             : type === 'warning'
             ? 'bg-amber-500/20 border-amber-500/40 text-amber-400'
             : type === 'success'
-            ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-            : 'bg-cyan-500/20 border-cyan-500/40 text-cyan-400'
+            ? 'bg-[#F46A35]/20 border-[#F46A35]/50 text-[#F46A35]'
+            : 'bg-blue-500/20 border-blue-500/40 text-blue-400'
         }`}
       >
         {type === 'error' ? (

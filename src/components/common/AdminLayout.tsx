@@ -1,208 +1,64 @@
-import React, { useState } from 'react'
-import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Layers, Users, Smartphone, Settings, LogOut, Activity, Menu, X, FileText, UserPlus, Tag, Bell, History, Flag, ShieldAlert, MapPin } from 'lucide-react'
-import { useAuth } from '@/app/providers/AuthProvider'
-import { useRBAC } from '@/app/providers/useRBAC'
-import { useToast } from '@/app/providers/ToastProvider'
-import { AppStrings } from '@/core/constants/app_strings'
-
-interface NavContentProps {
-  sections: Array<{
-    title: string
-    items: Array<{
-      name: string
-      href: string
-      icon: React.ElementType
-    }>
-  }>
-  pathname: string
-  onItemClick: () => void
-}
-
-const NavContent: React.FC<NavContentProps> = ({ sections, pathname, onItemClick }) => (
-  <div className="space-y-6">
-    {sections.map((section, idx) => (
-      <div key={idx} className="space-y-2">
-        <h3 className="px-4 text-[10px] font-bold text-slate-500 tracking-widest uppercase">
-          {section.title}
-        </h3>
-        <div className="space-y-1">
-          {section.items.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                onClick={onItemClick}
-                className={`flex items-center gap-4 px-4 py-3 mx-2 rounded-xl text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/50 shadow-inner'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/30'
-                }`}
-              >
-                <item.icon className="w-4 h-4" />
-                <span>{item.name}</span>
-              </Link>
-            )
-          })}
-        </div>
-      </div>
-    ))}
-  </div>
-)
+import React, { useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
+import { AdminSidebar } from '@/components/brand/AdminSidebar';
+import { AdminHeader } from '@/components/brand/AdminHeader';
 
 export const AdminLayout: React.FC = () => {
-  const { user, signOut } = useAuth()
-  const { can } = useRBAC()
-  const { showToast } = useToast()
-  const location = useLocation()
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const location = useLocation();
 
-  const handleLogout = async () => {
-    await signOut()
-    showToast('Logged out successfully.', 'info')
-  }
-
-  const sections = [
-    {
-      title: AppStrings.Navigation.groups.main,
-      items: [
-        { name: AppStrings.Navigation.items.dashboard, href: '/dashboard', icon: Layers, permission: 'view_dashboard' },
-        { name: AppStrings.Navigation.items.users, href: '/users', icon: Users, permission: 'manage_users' },
-        { name: AppStrings.Navigation.items.requests, href: '/requests', icon: FileText, permission: 'manage_activities' },
-        { name: AppStrings.Navigation.items.joinRequests, href: '/join-requests', icon: UserPlus, permission: 'manage_join_requests' },
-        { name: AppStrings.Navigation.items.categories, href: '/categories', icon: Tag, permission: 'manage_categories' },
-      ]
-    },
-    {
-      title: AppStrings.Navigation.groups.communication,
-      items: [
-        { name: AppStrings.Navigation.items.notifications, href: '/notifications', icon: Bell, permission: 'manage_notifications' },
-        { name: AppStrings.Navigation.items.notificationsHistory, href: '/notifications-history', icon: History, permission: 'manage_notifications' },
-      ]
-    },
-    {
-      title: AppStrings.Navigation.groups.moderation,
-      items: [
-        { name: AppStrings.Navigation.items.reports, href: '/reports', icon: Flag, permission: 'manage_reports' },
-      ]
-    },
-    {
-      title: AppStrings.Navigation.groups.system,
-      items: [
-        { name: AppStrings.Navigation.items.devices, href: '/devices', icon: Smartphone, permission: 'manage_devices' },
-        { name: 'Admin Roles', href: '/roles', icon: ShieldAlert, permission: 'manage_admin_roles' },
-        { name: AppStrings.Navigation.items.cities, href: '/cities', icon: MapPin, permission: 'manage_cities' },
-        { name: AppStrings.Navigation.items.settings, href: '/app-settings', icon: Settings, permission: 'manage_settings' },
-      ]
-    }
-  ]
-  .map(section => ({
-    ...section,
-    items: section.items.filter(item => can(item.permission as any))
-  }))
-  .filter(section => section.items.length > 0);
+  // Derive route title for header
+  const getRouteTitle = (path: string): string => {
+    if (path.startsWith('/users')) return 'Users';
+    if (path.startsWith('/requests')) return 'Activity Posts';
+    if (path.startsWith('/join-requests')) return 'Join Applications';
+    if (path.startsWith('/categories')) return 'Categories';
+    if (path.startsWith('/notifications-history')) return 'Notification History';
+    if (path.startsWith('/notifications')) return 'Send Notifications';
+    if (path.startsWith('/reports')) return 'Reports & Flagged';
+    if (path.startsWith('/devices')) return 'Connected Devices';
+    if (path.startsWith('/roles')) return 'Admin Roles';
+    if (path.startsWith('/cities')) return 'Cities';
+    if (path.startsWith('/app-settings')) return 'App Settings';
+    return 'Control Center';
+  };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#0B1121] text-slate-100 font-sans antialiased selection:bg-emerald-500/30 flex-col md:flex-row">
+    <div className="flex h-screen w-screen overflow-hidden bg-[var(--kb-bg)] text-[var(--kb-text)] font-sans antialiased flex-col md:flex-row transition-colors">
+      {/* Branded Sidebar */}
+      <AdminSidebar
+        mobileOpen={mobileOpen}
+        onCloseMobile={() => setMobileOpen(false)}
+      />
 
-      {/* ── DESKTOP SIDEBAR ─────────────────────────────────────────────── */}
-      <aside className="hidden md:flex flex-col w-64 flex-shrink-0 h-full overflow-y-auto border-r border-slate-800 bg-[#111827] pt-6 pb-4 space-y-8">
-        
-        {/* Brand */}
-        <div className="flex items-center gap-3 px-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/25 to-teal-500/10 border border-emerald-500/40 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-950/40">
-            <Activity className="w-5 h-5 text-emerald-400 stroke-[2.2]" />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-base tracking-tight text-white leading-tight flex items-center gap-1.5">
-              <span>{AppStrings.Navigation.brand}</span>
-              <span className="text-[10px] px-1.5 py-0.5 font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 rounded-md">ADMIN</span>
-            </h1>
-            <p className="text-[9px] text-slate-400 uppercase tracking-widest font-mono mt-0.5 font-bold">{AppStrings.Navigation.portalType}</p>
-          </div>
-        </div>
-
-        {/* Nav */}
-        <nav className="flex-1 overflow-y-auto no-scrollbar pb-6">
-          <NavContent sections={sections} pathname={location.pathname} onItemClick={() => {}} />
-        </nav>
-
-        {/* User + Logout (Bottom) */}
-        <div className="px-6 mt-auto">
-          <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-3 flex items-center justify-between">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-emerald-600/20 border border-emerald-600/30 flex items-center justify-center font-bold text-emerald-500 text-xs shrink-0">
-                {user?.email?.[0]?.toUpperCase() || 'A'}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-slate-200 truncate">{user?.email || AppStrings.Navigation.adminFallbackName}</p>
-              </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              title={AppStrings.Navigation.logout}
-              className="p-2 shrink-0 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* ── MOBILE HEADER ───────────────────────────────────────────────── */}
-      <header className="md:hidden border-b border-slate-800 bg-[#111827] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/25 to-teal-500/10 border border-emerald-500/40 flex items-center justify-center">
-            <Activity className="w-4 h-4 text-emerald-400 stroke-[2.2]" />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="font-extrabold text-sm text-white">{AppStrings.Navigation.brand}</span>
-            <span className="text-[9px] px-1 py-0.2 font-mono font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/25 rounded">ADMIN</span>
-          </div>
-        </div>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 text-slate-300 hover:bg-slate-800 rounded-lg transition-colors"
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
-      </header>
-
-      {/* ── MOBILE DRAWER ───────────────────────────────────────────────── */}
-      {mobileOpen && (
-        <div className="md:hidden fixed inset-0 z-20 pt-16 bg-[#111827] flex flex-col overflow-y-auto">
-          <nav className="flex-1 py-6">
-            <NavContent sections={sections} pathname={location.pathname} onItemClick={() => setMobileOpen(false)} />
-          </nav>
-          <div className="p-4 border-t border-slate-800">
-             <button
-              onClick={() => { handleLogout(); setMobileOpen(false) }}
-              className="w-full flex items-center justify-center gap-2 text-sm font-semibold bg-rose-500/10 text-rose-400 py-3 rounded-xl transition-colors"
-            >
-              <LogOut className="w-4 h-4" /> {AppStrings.Navigation.logout}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* ── MAIN CONTENT ────────────────────────────────────────────────── */}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 relative">
+        {/* Sticky Header with Theme Switcher and User Info */}
+        <AdminHeader
+          onToggleMobileMenu={() => setMobileOpen(!mobileOpen)}
+          title={getRouteTitle(location.pathname)}
+        />
+
+        {/* Scrollable Viewport */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 relative">
           <div className="max-w-7xl mx-auto space-y-6 pb-12">
-            <React.Suspense fallback={
-              <div className="flex items-center justify-center min-h-[350px]">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 rounded-full border-2 border-emerald-500/20 border-t-emerald-500 animate-spin" />
-                  <p className="text-xs text-slate-400 font-medium tracking-wide">Loading KhelBhai Control Center...</p>
+            <React.Suspense
+              fallback={
+                <div className="flex items-center justify-center min-h-[350px]">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-10 h-10 rounded-full border-3 border-[#F46A35]/20 border-t-[#F46A35] animate-spin" />
+                    <p className="text-xs text-[var(--kb-muted)] font-bold tracking-wider uppercase">
+                      Loading KhelBhai Control Center...
+                    </p>
+                  </div>
                 </div>
-              </div>
-            }>
+              }
+            >
               <Outlet />
             </React.Suspense>
           </div>
         </main>
       </div>
     </div>
-  )
-}
+  );
+};
