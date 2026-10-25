@@ -55,6 +55,7 @@ lastspot_backend/
 │   │   ├── providers/            # AuthProvider, ToastProvider, useRBAC hook
 │   │   └── router/               # Route declarations, code splitting & ProtectedRoute
 │   ├── components/               # Shared reusable UI & layout components
+│   │   ├── brand/                # Official KhelBhai V2 Brand UI System (Sidebar, Header, Table, etc.)
 │   │   ├── common/               # AdminLayout, AlertDialog, ToastNotification
 │   │   └── ui/                   # Radix primitives (button, badge, card, dialog, table)
 │   ├── core/                     # Platform-wide constants & infrastructure
@@ -73,9 +74,10 @@ lastspot_backend/
 │   │   ├── settings/             # Remote config, maintenance mode, force update
 │   │   └── users/                # User profile directory & account status lifecycle
 │   ├── lib/
-│   │   └── adminRepo.ts          # Centralized Data Access Layer (DAL) repository
-│   ├── App.tsx                   # Top-level application root with Suspense
-│   ├── index.css                 # Global CSS rules, custom scrollbars, & tokens
+│   │   ├── adminRepo.ts          # Centralized Data Access Layer (DAL) repository
+│   │   └── devices.ts            # Resilient multi-tier device retrieval with diagnostics
+│   ├── App.tsx                   # Top-level application root with Suspense & ThemeProvider
+│   ├── index.css                 # Global CSS rules, CSS custom properties, & tokens
 │   └── main.tsx                  # React DOM root bootstrapping
 ├── supabase/                     # Supabase backend definitions
 │   ├── config.toml               # Local Supabase CLI configuration
@@ -86,7 +88,7 @@ lastspot_backend/
 │   └── migrations/               # PostgreSQL DDL migrations
 │       ├── 20261018000000_admin_device_access.sql
 │       └── 20261019000000_user_data_and_device_consistency.sql
-├── package.json                  # Dependencies and build scripts
+├── package.json                  # Dependencies and build scripts (v2.0.0)
 └── vite.config.ts                # Vite configuration with route aliases and base URL
 ```
 
@@ -97,7 +99,7 @@ lastspot_backend/
 | :--- | :--- | :--- |
 | **Authentication** | Completed | Email/password login, remember-me persistence, password recovery link & reset flow |
 | **RBAC Authorization** | Completed | 3 roles (`super_admin`, `admin`, `moderator`) with fine-grained route & action guards |
-| **Dashboard** | Completed | Real-time counts across 10 metrics, recent users, posts, and device streams |
+| **Dashboard** | Completed | KhelBhai Control Center overview with 10 KPI cards, recent users, posts, and device streams |
 | **Users Directory** | Completed | Search by name/email/phone, status filters, city filter, pagination |
 | **User Inspection** | Completed | Full specifications card, auth.users email fallback, decoupled state, complete device telemetry |
 | **Activity Posts** | Completed | Filter by category, status, city; inspect applicants; change post status |
@@ -109,10 +111,11 @@ lastspot_backend/
 | **Notifications** | Completed | Push/in-app broadcast composer with instant dispatch or future scheduling |
 | **Admin Roles** | Completed | Super Admin / Moderator management, role assignment, admin creation Edge Function |
 | **Remote Config** | Completed | Platform version enforcement, maintenance mode rules, feature flags |
+| **Theme Engine** | Completed | Persistent Light/Dark/System modes with OS synchronization |
 
 ---
 
 ## 5. Development Branch & Working Tree
-- **Current Active Branch**: `fix/admin-user-data-device-consistency`
-- **Base Branch**: `feature/khelbhai-admin-rebrand` (tracked at `origin/feature/khelbhai-admin-rebrand`)
+- **Current Active Branch**: `feature/khelbhai-admin-v2`
+- **Base Branch**: `main`
 - **Working Tree Cleanliness**: Verified via `git status`. All modifications are grouped into logical commits.

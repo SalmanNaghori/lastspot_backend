@@ -14,7 +14,7 @@ Whenever you begin or resume work on this repository, you **MUST** read and adhe
 2. **[ARCHITECTURE.md](file:///o:/Project/lastspot_backend-1/docs/ARCHITECTURE.md)**: Mermaid architectural diagrams, module graphs, authentication pipeline, and Supabase data flows.
 3. **[ADMIN_MODULES.md](file:///o:/Project/lastspot_backend-1/docs/ADMIN_MODULES.md)**: Specification of all 11 core modules, routing, RBAC permissions, and views.
 4. **[DATABASE_SCHEMA.md](file:///o:/Project/lastspot_backend-1/docs/DATABASE_SCHEMA.md)**: PostgreSQL table schemas, RPC functions, and Supabase Edge Functions.
-5. **[UI_UX_GUIDELINES.md](file:///o:/Project/lastspot_backend-1/docs/UI_UX_GUIDELINES.md)**: Design system, color tokens (`#0B1121`, `#111827`, `#10B981`), typography, and accessibility.
+5. **[UI_UX_GUIDELINES.md](file:///o:/Project/lastspot_backend-1/docs/UI_UX_GUIDELINES.md)**: Design system, KhelBhai V2 brand tokens (Orange `#F46A35`, Amber `#FFB45E`, Light `#FFF8F1`, Dark `#12141B`), typography, and accessibility.
 6. **[CODE_REVIEW.md](file:///o:/Project/lastspot_backend-1/docs/CODE_REVIEW.md)**: Code review findings, classified issues, and resolution history.
 7. **[CHANGELOG.md](file:///o:/Project/lastspot_backend-1/docs/CHANGELOG.md)**: Chronological record of features, refactors, and fixes.
 8. **[DECISIONS.md](file:///o:/Project/lastspot_backend-1/docs/DECISIONS.md)**: Architectural Decision Records (ADRs).

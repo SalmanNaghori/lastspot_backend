@@ -1,6 +1,6 @@
-# KhelBhai Admin Panel — Control Center
+# KhelBhai Admin Panel — Control Center V2
 
-[![Version](https://img.shields.io/badge/version-1.0.0-emerald.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-2.0.0-orange.svg)](package.json)
 [![React](https://img.shields.io/badge/React-19.2-blue.svg)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-~6.0-3178C6.svg)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-8.2-646CFF.svg)](https://vitejs.dev/)
@@ -8,46 +8,56 @@
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%2015-3ECF8E.svg)](https://supabase.com/)
 [![License](https://img.shields.io/badge/license-Private-red.svg)]()
 
-The **KhelBhai Admin Panel** is an enterprise-grade, high-performance administrative control center built for complete platform governance, user lifecycle inspection, activity moderation, push communication, and remote system orchestration for **KhelBhai** (formerly *LastSpot / ActivityConnect*).
+The **KhelBhai Admin Panel** is an enterprise-grade, high-performance administrative control center built for platform governance, user lifecycle inspection, activity moderation, push communication, and remote system orchestration for **KhelBhai** sports community platform.
 
 It interfaces seamlessly with **Supabase (PostgreSQL 15+)** with strict Row-Level Security (RLS) policies and coordinates in real-time with the **KhelBhai Mobile Application (Flutter)**.
 
 ---
 
-## 📌 Release Highlights — Version 1.0.0
+## 📌 Release Highlights — Version 2.0.0 (Official Brand Design & Visual Assets)
 
-This release elevates the platform into a unified, secure, and production-ready administration suite:
+This major release transforms the Admin Panel into the official **KhelBhai V2 Brand Design System**, matching the Flutter production mobile application visual identity and asset language:
 
-### 1. 🎨 Complete KhelBhai Rebranding & Visual Identity
-- Fully rebranded from **LastSpot / ActivityConnect** to **KhelBhai Admin Control Center**.
-- Designed and integrated custom high-resolution SVG favicon (`public/favicon.svg`) featuring the KhelBhai emerald sports motion shield.
-- Modernized desktop and mobile sidebars with sports activity styling, active state glow, and `ADMIN` badge indicators.
-- Revamped Login, Forgot Password, and Password Reset screens with tailored sports community aesthetics.
-- Centralized all user-facing copy into `src/core/constants/app_strings.ts`.
+### 1. 🎨 Official Brand Design Tokens & System
+- Fully replaced legacy ActivityConnect navy/green branding with official KhelBhai visual identity:
+  - **Primary Orange**: `#F46A35` (Interactive primary, badges, active states)
+  - **Orange Hover**: `#DC5425`
+  - **Warm Amber**: `#FFB45E` (Secondary highlights, gradients, alerts)
+  - **Amber Hover**: `#EAA04C`
+  - **Light Background**: `#FFF8F1` | **Light Surface**: `#FFFFFF` | **Light Border**: `#F0E4DA`
+  - **Dark Background**: `#12141B` | **Dark Surface**: `#20232D` | **Dark Border**: `#2E3442`
+  - **Primary Dark Text**: `#171D2A` | **Dark Primary Text**: `#FFF8F1` | **Muted Text**: `#697386` / `#9CA3AF`
 
-### 2. ⚡ Route-Level Code Splitting & Performance Optimization
-- Transitioned monolithic page imports into dynamic `React.lazy()` chunks with suspense boundaries.
-- **Main JavaScript bundle size reduced by 55%** (from 684 kB down to 309 kB), eliminating Vite bundle size warnings and enabling sub-second initial paint times.
+### 2. 🌓 Complete Light & Dark Theme Engine
+- Full support for **Light**, **Dark**, and **System** themes.
+- Seamless automatic synchronization with OS `prefers-color-scheme`.
+- Robust preference persistence under `'khelbhai_admin_theme'` in `localStorage`.
+- Branded theme toggles integrated into both sidebar and top navigation bar.
 
-### 3. 🛡️ Security, RBAC & Session Reliability
-- Enforced two-tier Role-Based Access Control (**RBAC**): `super_admin`, `admin`, and `moderator`.
-- Rejection of unprivileged accounts attempting login with automated feedback.
-- Migrated session tokens to `khelbhai_admin_session` with backward-compatible fallbacks.
-- Reliable logout cleanup purging cached tokens across both `localStorage` and `sessionStorage`.
+### 3. 🏅 Official Vector Assets & 3D Sports Illustration Engine
+- Official vector `KhelBhaiLogo` with kinetic sports shield emblem, gradient fill, and brand typography.
+- SVG favicon (`public/favicon.svg`) with warm orange-amber sports shield.
+- Custom 3D vector sports illustration suite (`SportsIllustration.tsx`):
+  - `login_hero`: Multi-sport 3D composition with cricket, football, basketball, and tennis equipment.
+  - Contextual illustrated empty states: `empty_users`, `empty_activities`, `empty_devices`, `empty_notifications`, `empty_reports`, and `empty_general`.
 
-### 4. 🐛 React 19 Compliance & Static Analysis Fixes
-- Resolved React 19 compiler `react-hooks/set-state-in-effect` violations in `UserDetailsPage.tsx`.
-- Standardized `useEffect` dependency arrays across user and device query hooks.
-- Attained **0 ESLint errors** across the entire workspace.
+### 4. 🧩 Branded Reusable Component Suite (`src/components/brand/`)
+- **AdminSidebar**: Grouped navigation, active orange indicators, user profile pill, and embedded theme toggle.
+- **AdminHeader**: Glassmorphic sticky header, live connection indicator, and quick actions.
+- **AdminPageHeader**: Title, subtitle, badge counters, and action button slots.
+- **AdminStatCard**: Elevated KPI metric cards with brand orange accents.
+- **AdminDataTable**: Responsive data tables with sticky headers, pagination, skeleton loading, and empty state illustrations.
+- **AdminSearchBar** & **AdminFilterBar**: Consistent search inputs with instant clear action and filter pills.
+- **AdminStatusBadge**: High-contrast, WCAG-compliant status badges for users, devices, requests, and reports.
+- **AdminFormField**: Form controls with error states and helper copy.
+- **AdminModal**: Accessible glassmorphic modal dialogs with escape/backdrop dismissal.
+- **AdminEmptyState** & **AdminLoadingSkeleton**: Consistent illustration-driven feedback states.
+- **AdminErrorState**: Diagnostic error states with retry actions.
 
-### 5. 📚 Comprehensive Architecture & Engineering Documentation
-- Authored 9 structured reference guides in [`docs/`](docs) covering architecture, database schema, module specs, UI/UX guidelines, code reviews, and standard operating procedures.
-- Created persistent AI instructions in `.agents/rules/project_context.md`.
-
-### 6. 🔧 Repository & Environment Hygiene
-- Re-architected [`.gitignore`](.gitignore) with robust rules protecting secrets, build outputs, OS metadata, and editor files.
-- Added standardized [`.env.example`](.env.example) template for seamless local onboarding.
-- Verified automated GitHub Actions CI/CD workflows for building and deploying to GitHub Pages.
+### 5. 🛡️ Preserved Telemetry, Profile & Device Fixes (Zero Regressions)
+- **Multi-tier resilient device retrieval**: Seamlessly falls back across `get-user-devices` Edge Function -> `get_user_devices_for_admin` RPC -> direct PostgREST with RLS.
+- **User profile completeness**: Reliable fallback to `auth.users` for missing emails/phones on older accounts.
+- **Diagnostic logging**: Structured latency, request ID, and error telemetry without exposing secrets or tokens.
 
 ---
 
@@ -56,14 +66,14 @@ This release elevates the platform into a unified, secure, and production-ready 
 ```mermaid
 graph TD
     subgraph Clients["Clients"]
-        AdminWeb["KhelBhai Admin Panel<br/>(React 19 + Vite 8 + TS)"]
+        AdminWeb["KhelBhai Admin Panel V2<br/>(React 19 + Vite 8 + TS)"]
         MobileApp["KhelBhai Mobile App<br/>(Flutter Android / iOS)"]
     end
 
     subgraph Supabase["Supabase Cloud Infrastructure"]
         AuthService["Supabase Auth (JWT)"]
         PostgresDB[("PostgreSQL 15 Database<br/>with Row Level Security (RLS)")]
-        EdgeFunctions["Deno Serverless Edge Functions<br/>(create-admin-user)"]
+        EdgeFunctions["Deno Serverless Edge Functions<br/>(get-user-devices, get-user-details, create-admin-user)"]
         Storage["Supabase Storage<br/>(Avatars, Media)"]
     end
 
@@ -83,17 +93,17 @@ The KhelBhai Admin Panel provides 11 dedicated functional modules:
 
 | # | Module | Route | Capabilities |
 |---|---|---|---|
-| 1 | **Dashboard** | `/` | Real-time platform KPI counters (Users, Activities, Devices, Reports), live registration stream, activity feed, and device breakdown. |
-| 2 | **User Directory** | `/users` | High-speed RPC search by name/email, city/status filtering, profile inspection, status mutation (Active, Suspended, Banned, Soft-Deleted). |
-| 3 | **Sports Activities** | `/requests` | Review published sports posts, location coordinates, player slots, participation rules, and cancellation/soft-deletion. |
-| 4 | **Join Requests** | `/join-requests` | Audit and supervise join applications sent from players to host organizers with approval/rejection auditing. |
-| 5 | **Sports Categories** | `/categories` | Manage sports taxonomies (Badminton, Cricket, Football, etc.), emoji symbols, display ordering, and visibility toggles. |
+| 1 | **Dashboard** | `/` | KhelBhai Control Center overview with real-time KPI cards, registration stream, and device breakdown. |
+| 2 | **User Directory** | `/users` | High-speed RPC search by name/email, city/status filtering, profile inspection, status mutations. |
+| 3 | **Sports Activities** | `/requests` | Review published sports posts, location coordinates, player slots, participation rules, and cancellation. |
+| 4 | **Join Requests** | `/join-requests` | Audit and supervise join applications sent from players to host organizers. |
+| 5 | **Sports Categories** | `/categories` | Manage sports taxonomies (Badminton, Cricket, Football, etc.), display ordering, and visibility toggles. |
 | 6 | **City Operations** | `/cities` | Geographical coverage management, state assignments, pin code mappings, and active/inactive switches. |
-| 7 | **Safety & Reports** | `/reports` | Player report queue (harassment, spam, no-shows), evidence review, resolution notes, and one-click account suspension. |
+| 7 | **Safety & Reports** | `/reports` | Player report queue (harassment, spam, no-shows), resolution notes, and one-click account suspension. |
 | 8 | **Device Telemetry** | `/devices` | Real-time hardware inventory: OS versions, device models, app build numbers, FCM push tokens, and last active heartbeats. |
 | 9 | **Broadcast Center** | `/notifications` | Dispatch rich push notifications and in-app alerts to all users or filtered audience segments with delivery history logs. |
-| 10 | **App Configuration** | `/app-settings` | Remote maintenance mode kill-switch, feature flags (chat, carpooling, sports scheduling), and minimum version enforcement gates. |
-| 11 | **Staff Roles & RBAC** | `/admin-roles` | Provision and audit internal admin accounts, assign roles (`super_admin`, `admin`, `moderator`) via secure Edge Functions. |
+| 10 | **App Configuration** | `/app-settings` | Remote maintenance mode kill-switch, feature flags (chat, sports scheduling), and minimum version enforcement gates. |
+| 11 | **Staff Roles & RBAC** | `/admin-roles` | Provision and audit internal admin accounts, assign roles (`super_admin`, `admin`, `moderator`). |
 
 ---
 
@@ -103,8 +113,9 @@ The KhelBhai Admin Panel provides 11 dedicated functional modules:
 |---|---|
 | **Core Framework** | React 19 (`react` ^19.2, `react-dom` ^19.2) |
 | **Build Tooling** | Vite 8 (`vite` ^8.2), TypeScript (~6.0) |
-| **Routing** | React Router v7 (`react-router-dom` ^7.18) with `React.lazy()` |
+| **Routing** | React Router v7 (`react-router-dom` ^7.18) with `React.lazy()` chunking |
 | **Styling & Design** | Tailwind CSS 3 (`tailwindcss` ^3.4), `tailwindcss-animate`, `clsx`, `tailwind-merge` |
+| **Design System** | Custom KhelBhai V2 Tokens (CSS Custom Properties + Tailwind extension) |
 | **UI Primitives** | Radix UI (Avatar, Dialog, Dropdown Menu, Label, Select, Slot) |
 | **Icons** | Lucide React (`lucide-react` ^1.31) |
 | **Database & Auth** | Supabase JavaScript Client (`@supabase/supabase-js` ^2.112) |
@@ -126,7 +137,7 @@ lastspot_backend/
 ├── docs/                         # Comprehensive engineering documentation suite
 │   ├── ADMIN_MODULES.md          # Functional specifications for all 11 modules
 │   ├── ARCHITECTURE.md           # Architecture diagrams, data flow & security
-│   ├── CHANGELOG.md              # Historical version changelog
+│   ├── CHANGELOG.md              # Historical version changelog (v2.0.0)
 │   ├── CODE_REVIEW.md            # Detailed code quality analysis
 │   ├── DATABASE_SCHEMA.md        # PostgreSQL tables, RPCs & RLS policies
 │   ├── DECISIONS.md              # Architectural Decision Records (ADRs)
@@ -135,16 +146,18 @@ lastspot_backend/
 │   └── UI_UX_GUIDELINES.md       # Color tokens, typography & motion guidelines
 ├── public/                       # Static assets & SVG favicon
 ├── src/
-│   ├── app/                      # Application core (Providers, Router, Lazy chunks)
-│   ├── components/               # Common layouts, sidebars, navigation, Radix UI
+│   ├── app/                      # Application core (ThemeProvider, AuthProvider, Router)
+│   ├── components/               # UI components
+│   │   ├── brand/                # KhelBhai V2 Brand UI System (Sidebar, Header, Table, etc.)
+│   │   └── common/               # Layouts and shared alerts
 │   ├── core/                     # Constants, UI strings, Supabase client
 │   ├── features/                 # Modular feature domains (auth, users, requests, etc.)
-│   └── lib/                      # Data repository layer (adminRepo.ts, utils.ts)
+│   └── lib/                      # Data repository layer (adminRepo.ts, devices.ts)
 ├── supabase/                     # Supabase Edge Functions & migrations
 ├── .env.example                  # Environment configuration template
 ├── .gitignore                    # Production git ignore specification
-├── package.json                  # Project manifest (v1.0.0)
-├── tailwind.config.js            # Tailwind theme tokens & extensions
+├── package.json                  # Project manifest (v2.0.0)
+├── tailwind.config.js            # Tailwind theme tokens & KhelBhai brand colors
 └── vite.config.ts                # Vite bundler configuration
 ```
 
@@ -189,7 +202,7 @@ lastspot_backend/
 
 ## 🧪 Verification & Quality Assurance
 
-Before committing or opening pull requests, run the standard quality verification sequence:
+Run the standard quality verification sequence:
 
 ```bash
 # 1. Run static analysis & ESLint verification (0 errors required)
@@ -206,7 +219,7 @@ npm run preview
 
 ## 🚢 Deployment & CI/CD
 
-- **GitHub Pages Deployment:** Pushing changes to the `main` branch automatically triggers [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), compiling the production distribution and publishing the SPA to GitHub Pages.
+- **GitHub Pages Deployment:** Pushes to `main` automatically trigger [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml), building the production distribution and publishing the SPA to GitHub Pages.
 - **Edge Functions Deployment:** Changes to `supabase/functions/` are deployed automatically using [`.github/workflows/deploy-functions.yml`](.github/workflows/deploy-functions.yml).
 
 ---

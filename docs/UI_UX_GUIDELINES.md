@@ -1,102 +1,97 @@
-# KhelBhai Admin Panel — UI/UX Design System & Guidelines
+# KhelBhai Admin Panel V2 — UI/UX Design System & Guidelines
 
-This document outlines the visual design system, interaction patterns, component guidelines, motion specifications, and accessibility requirements for the KhelBhai Admin Panel.
+This document outlines the visual design system, interaction patterns, component guidelines, motion specifications, and accessibility requirements for the KhelBhai Admin Panel V2.
 
 ---
 
 ## 1. Design Philosophy
-The KhelBhai Admin Panel is engineered around three pillars:
-- **High-Density Clarity**: Dense, scannable data layouts enabling rapid operational reviews without visual clutter.
-- **Vibrant Dark-Aesthetic**: A deep slate foundation (`#0B1121`) accented with energetic sports emerald gradients (`#10B981` -> `#059669`), cyan telemetry highlights, and color-coded status badges.
-- **Intentional Motion & Feedback**: Meaningful micro-animations that confirm destructive actions, soften view transitions, and provide instant visual feedback without latency.
+The KhelBhai Admin Panel V2 is aligned with the official KhelBhai mobile application:
+- **Sports Energy & Warmth**: Grounded in KhelBhai's signature primary warm orange (`#F46A35`) and amber (`#FFB45E`), representing energy, athleticism, and community.
+- **Dual-Theme Seamlessness**: Complete first-class Light (`#FFF8F1`) and Dark (`#12141B`) themes with instantaneous OS sync and user persistence.
+- **High-Density Clarity**: Clean, highly readable admin tables, forms, and telemetry cards without clutter.
+- **3D Sports Vector Illustrations**: High-fidelity 3D sports iconography and tailored empty states (cricket, football, badminton, tennis) enhancing the user experience.
 
 ---
 
-## 2. Color Palette & Design Tokens
+## 2. Official Brand Colors & Design Tokens
 
-### Background & Surface Hierarchy
-```css
---bg-app:        #0B1121; /* Global canvas background */
---bg-sidebar:    #111827; /* Desktop navigation bar & headers */
---bg-surface:    #151C2C; /* Primary card surfaces & table backgrounds */
---bg-subtle:     #050B14; /* Inset form fields & search bars */
---border-subtle: #1E293B; /* 1px structural dividing lines (slate-800) */
---border-active: #334155; /* Interactive hover borders (slate-700) */
-```
-
-### Brand & Status Accents
-| Role | Hex | Tailwind Token | Use Case |
+### Core Brand Values
+| Token | Hex | Role | Usage |
 | :--- | :--- | :--- | :--- |
-| **Primary Brand** | `#10B981` | `emerald-500` | Primary buttons, active navigation pills, brand badges |
-| **Brand Glow** | `#059669` | `emerald-600` | Hover states, active gradients |
-| **Info / Telemetry**| `#38BDF8` | `sky-400` / `cyan-400` | Platform badges, Web devices, activity post links |
-| **Warning / Pending**| `#F59E0B`| `amber-400` / `amber-500` | Suspended users, pending join applications |
-| **Danger / Destructive**| `#F43F5E`| `rose-500` / `rose-400` | Banned users, soft-delete actions, error states |
-| **Neutral Text High** | `#F8FAFC`| `slate-50` | Primary headlines and active values |
-| **Neutral Text Medium**| `#94A3B8`| `slate-400` | Labels, table headers, descriptions |
-| **Neutral Text Low** | `#64748B`| `slate-500` | Subtitles, helper text, empty state icons |
+| **Primary Orange** | `#F46A35` | Interactive Primary | Primary buttons, active tabs, icon highlights, selection rings |
+| **Orange Hover** | `#DC5425` | Primary Hover | Hover & focus states on primary orange elements |
+| **Warm Amber** | `#FFB45E` | Secondary Accent | Highlights, secondary gradients, active indicators |
+| **Amber Hover** | `#EAA04C` | Secondary Hover | Accent button hover states |
+
+### Light Theme (`[data-theme="light"]`)
+| Role | Hex | CSS Token | Description |
+| :--- | :--- | :--- | :--- |
+| **Background** | `#FFF8F1` | `var(--kb-bg)` | Warm off-white canvas |
+| **Surface** | `#FFFFFF` | `var(--kb-surface)` | Clean elevated card and modal surface |
+| **Subtle Inset** | `#FDF3E7` | `var(--kb-subtle)` | Form inputs, table striping, inactive states |
+| **Border** | `#F0E4DA` | `var(--kb-border)` | Warm subtle structural border |
+| **Primary Text** | `#171D2A` | `var(--kb-text)` | High-contrast dark charcoal readable text |
+| **Muted Text** | `#697386` | `var(--kb-muted)` | Descriptions, timestamps, secondary labels |
+
+### Dark Theme (`.dark, [data-theme="dark"]`)
+| Role | Hex | CSS Token | Description |
+| :--- | :--- | :--- | :--- |
+| **Background** | `#12141B` | `var(--kb-bg)` | Deep neutral dark canvas |
+| **Surface** | `#20232D` | `var(--kb-surface)` | Card, table, and modal surface |
+| **Subtle Inset** | `#181B24` | `var(--kb-subtle)` | Form inputs and inset backgrounds |
+| **Border** | `#2E3442` | `var(--kb-border)` | Low-contrast dark structural border |
+| **Primary Text** | `#FFF8F1` | `var(--kb-text)` | Warm light readable text |
+| **Muted Text** | `#9CA3AF` | `var(--kb-muted)` | Secondary text and disabled indicators |
 
 ---
 
-## 3. Typography
-- **Primary Interface Font**: `Plus Jakarta Sans`, `Inter`, system-ui.
-- **Telemetry & Monospace**: `JetBrains Mono`, `ui-monospace`.
+## 3. Theme Engine & Persistence
+
+- **Modes**: `light`, `dark`, and `system`.
+- **Storage**: Key `'khelbhai_admin_theme'` in `localStorage`.
+- **OS Synchronization**: Active listener on `window.matchMedia('(prefers-color-scheme: dark)')`.
+- **DOM Application**: Applies `.dark` class and `data-theme="dark"` / `data-theme="light"` to `document.documentElement`.
+- **Toggles**: `AdminThemeToggle` provides segmented and icon-only variants for header and sidebar integration.
+
+---
+
+## 4. Typography
+- **Primary Font**: `Outfit`, `Inter`, system-ui.
+- **Monospace Font**: `JetBrains Mono`, `ui-monospace`.
 
 ### Hierarchy
-- **Module Headlines**: `text-2xl font-bold tracking-tight text-white`
-- **Section Headers**: `text-xs font-bold text-slate-500 uppercase tracking-widest font-mono`
-- **Card Metrics**: `text-2xl font-bold text-slate-100`
-- **Table Cell Text**: `text-xs font-medium text-slate-300`
-- **Form Labels**: `text-sm font-semibold text-slate-200`
+- **Module Headlines**: `text-2xl font-bold tracking-tight text-[var(--kb-text)]`
+- **Section Headers**: `text-xs font-bold text-[var(--kb-muted)] uppercase tracking-wider`
+- **KPI Metrics**: `text-2xl font-black text-[var(--kb-text)]`
+- **Table Cell Text**: `text-xs font-medium text-[var(--kb-text)]`
+- **Form Labels**: `text-xs font-semibold text-[var(--kb-text)]`
 - **Status Badges**: `text-[10px] font-bold uppercase tracking-wider`
 
 ---
 
-## 4. Component Patterns
+## 5. Branded Component Suite (`src/components/brand/`)
 
-### A. Data Tables
-- **Container**: `bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl`
-- **Header Row**: `bg-slate-950/60 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-800`
-- **Row Hover**: `hover:bg-slate-800/40 transition-colors duration-150 ease-in-out`
-- **Dividers**: `divide-y divide-slate-800/60`
-- **Cell Padding**: `px-4 py-3.5` for compact desktop density.
-
-### B. Action Dialogs (`AlertDialog`)
-- **Backdrop**: `fixed inset-0 z-50 bg-black/80 backdrop-blur-md transition-opacity duration-300 animate-in fade-in`
-- **Modal Box**: `bg-[#151C2C] border border-slate-800 rounded-2xl p-6 shadow-2xl max-w-md w-full animate-in zoom-in-95 duration-200`
-- **Primary Confirm**:
-  - Danger (Ban / Delete): `bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl`
-  - Success (Reactivate): `bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl`
-  - Warning (Suspend): `bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl`
-
-### C. Search & Filter Bar
-- Unified inline filter strip: Search input with search icon, category/city dropdown selects, status pill buttons, and a clear filters action.
-- Clear query feedback when zero matches are found with an immediate "Reset Filters" button.
-
-### D. Empty & Error States
-- Never show a blank screen. Always include:
-  - Visual icon token in a rounded slate badge (`w-12 h-12 rounded-2xl bg-slate-950 border border-slate-800`)
-  - Clear descriptive title (e.g., "No users found matching filters")
-  - Friendly subtext explaining how to resolve or clear filters.
-  - Action button (e.g., "Clear Filters", "Add Category", "Retry Load").
+1. **`KhelBhaiLogo`**: Official sports shield vector mark with orange-amber gradient and customizable badge.
+2. **`SportsIllustration`**: 3D sports vector illustration engine supporting `login_hero` and empty states (`empty_users`, `empty_activities`, `empty_devices`, `empty_notifications`, `empty_reports`, `empty_general`).
+3. **`AdminSidebar`**: Collapsible desktop/mobile drawer navigation with brand logo, live connection status, active indicator pill, and user profile card.
+4. **`AdminHeader`**: Glassmorphic sticky top navigation bar with mobile toggle and theme switcher.
+5. **`AdminPageHeader`**: Unified view header with page title, subtitle, count badge, and action button slots.
+6. **`AdminStatCard`**: Elevated metric card featuring brand orange icon container and smooth hover elevation.
+7. **`AdminDataTable`**: Responsive table featuring sticky header, pagination, skeleton loading, and empty state fallback.
+8. **`AdminSearchBar` & `AdminFilterBar`**: Search input with clear button and scrollable category pills.
+9. **`AdminStatusBadge`**: High-contrast, WCAG-compliant status badges for users, devices, requests, and moderation reports.
+10. **`AdminFormField`**: Form input container with label, error display, and focus rings.
+11. **`AdminModal`**: Glassmorphic modal with escape key and click-outside dismissal.
+12. **`AdminEmptyState`**: Illustrated empty state with optional primary call-to-action.
+13. **`AdminLoadingSkeleton`**: Shimmer skeletons for tables, KPI cards, and profile specifications.
+14. **`AdminErrorState`**: Error banner with diagnostic error messages and retry handler.
+15. **`AdminThemeToggle`**: Segmented or icon-only theme mode selector.
 
 ---
 
-## 5. Motion & Transitions Specification
+## 6. Accessibility & Contrast (WCAG 2.1 AA)
 
-| UI Element | Trigger Event | Classes / Physics | Duration |
-| :--- | :--- | :--- | :--- |
-| **Route Switch** | Page change | `animate-in fade-in` | 300ms ease-out |
-| **Modal Open** | Action button | `animate-in zoom-in-95 fade-in` | 200ms cubic-bezier |
-| **Table Row** | Pointer hover | `transition-colors` | 150ms ease-in-out |
-| **Async Action** | Form submit | `animate-spin` | Infinite linear |
-| **Toast Alert** | Dispatch | `shadow-2xl backdrop-blur-md animate-in slide-in-from-bottom-5` | 300ms |
-
----
-
-## 6. Accessibility & Responsiveness
-- **Keyboard Navigation**: Form inputs, buttons, and card links must specify explicit `:focus-visible` or `focus:ring-2 focus:ring-emerald-500/50 focus:outline-none`.
-- **Contrast**: Text elements strictly maintain WCAG 2.1 AA standards (minimum 4.5:1 contrast against `#0B1121` and `#111827`).
-- **Responsive Layout**:
-  - **Desktop (>= 768px)**: Fixed width 64 (256px) sidebar with categorized navigation groups and collapsible drawer.
-  - **Mobile (< 768px)**: Fixed sticky header with brand icon and animated hamburger drawer menu. Full width card stacks and horizontal table scroll wrappers.
+- Never place raw `#F46A35` text on pure white `#FFFFFF` when used for small body copy. Use `#DC5425` or high-contrast neutral text `#171D2A` with an orange indicator dot/icon.
+- All form inputs provide visible `:focus-visible` orange outline rings (`ring-2 ring-[#F46A35]/30`).
+- Destructive actions require secondary confirmation via `AlertDialog`.
+- All modals and interactive dropdowns support complete keyboard navigation (`Escape`, `Enter`, `Tab`).
