@@ -36,63 +36,35 @@ export interface UserDevicesResponse {
   telemetry?: {
     requestId: string;
     durationMs: number;
-    source: 'edge_function' | 'rpc' | 'direct_table' | 'baseline_fallback';
+    source: 'rpc' | 'edge_function' | 'direct_table';
   };
 }
 
-/**
- * Confirmed baseline records for user Zoro from public.user_devices.
- * Used as a fallback if remote RLS restricts unprivileged direct client
- * querying prior to Supabase Edge Function / RPC deployment.
- */
-export const ZORO_USER_ID = 'ebbf2bbe-2842-430f-bb32-0e77d7de238f';
-export const ZORO_BASELINE_DEVICES: UserDevice[] = [
-  {
-    id: 'f1a23b45-67c8-49de-bf01-23456789abcd',
-    user_id: ZORO_USER_ID,
-    platform: 'Android',
-    device_model: 'sdk_gphone16k_arm64',
-    os_version: 'Android 17 (API 37)',
-    app_version: '1.0.3',
-    build_number: '1',
-    last_active_at: '2026-10-18T07:30:00.000Z',
-    created_at: '2026-10-10T10:15:00.000Z',
-    updated_at: '2026-10-18T07:30:00.000Z',
-    is_active: true,
-    logged_out_at: null,
-    last_token_synced_at: '2026-10-18T07:30:00.000Z',
-    has_fcm_token: true
-  },
-  {
-    id: 'e2b34c56-78d9-40ef-cf12-34567890bcde',
-    user_id: ZORO_USER_ID,
-    platform: 'Android',
-    device_model: 'moto g45 5G',
-    os_version: 'Android 15 (API 35)',
-    app_version: '1.0.3',
-    build_number: '1',
-    last_active_at: '2026-10-12T14:20:00.000Z',
-    created_at: '2026-09-25T08:00:00.000Z',
-    updated_at: '2026-10-14T09:10:00.000Z',
-    is_active: false,
-    logged_out_at: '2026-10-14T09:10:00.000Z',
-    last_token_synced_at: null,
-    has_fcm_token: false
+export type DeviceErrorCategory = 'permission_denied' | 'rpc_not_found' | 'general';
+
+export class DeviceFetchError extends Error {
+  category: DeviceErrorCategory;
+  code?: string;
+
+  constructor(message: string, category: DeviceErrorCategory = 'general', code?: string) {
+    super(message);
+    this.name = 'DeviceFetchError';
+    this.category = category;
+    this.code = code;
   }
-];
+}
 
 /**
  * Fetch device records for a specific user with multi-tier fallback and safe diagnostic telemetry.
  * 
  * Strategy:
- * 1. Invokes the secure server-side Edge Function 'get-user-devices'.
- * 2. Attempts secure RPC 'get_user_devices_for_admin'.
+ * 1. Attempts secure RPC 'get_user_devices_for_admin' (Primary, SECURITY DEFINER, is_admin check).
+ * 2. Fallback to server-side Edge Function 'get-user-devices'.
  * 3. Fallback to direct sanitized table query on public.user_devices.
- * 4. Resilient baseline resolution for verified user records if remote RLS restricts access.
  */
 export const fetchUserDevices = async (userId: string): Promise<UserDevicesResponse> => {
   if (!userId) {
-    throw new Error('User ID is required to fetch device records');
+    throw new DeviceFetchError('User ID is required to fetch device records', 'general');
   }
 
   const cleanUserId = userId.trim().toLowerCase();
@@ -101,70 +73,10 @@ export const fetchUserDevices = async (userId: string): Promise<UserDevicesRespo
   const environment = import.meta.env.MODE || 'production';
 
   let rawList: any[] | null = null;
-  let dataSource: 'edge_function' | 'rpc' | 'direct_table' | 'baseline_fallback' = 'direct_table';
+  let dataSource: 'rpc' | 'edge_function' | 'direct_table' = 'rpc';
   let lastError: any = null;
 
-  // 1. Primary Strategy: Secure Supabase Edge Function
-  try {
-    const { data: efData, error: efError } = await supabase.functions.invoke('get-user-devices', {
-      body: { userId: cleanUserId }
-    });
-
-    if (efError) {
-      lastError = efError;
-      logDiagnostic({
-        requestId,
-        selectedUserId: cleanUserId,
-        endpoint: 'edge_function:get-user-devices',
-        httpStatus: (efError as any)?.context?.status || 500,
-        errorCode: efError.name || 'EF_ERROR',
-        errorMessage: efError.message,
-        durationMs: Math.round(performance.now() - startTime),
-        environment
-      });
-    } else if (efData && Array.isArray(efData.devices)) {
-      dataSource = 'edge_function';
-      const devices = efData.devices as UserDevice[];
-      const summary: UserDevicesSummary = efData.summary || {
-        total: devices.length,
-        active: devices.filter(d => d.is_active).length,
-        inactive: devices.filter(d => !d.is_active).length
-      };
-
-      logDiagnostic({
-        requestId,
-        selectedUserId: cleanUserId,
-        endpoint: 'edge_function:get-user-devices',
-        httpStatus: 200,
-        queryResultCount: devices.length,
-        durationMs: Math.round(performance.now() - startTime),
-        environment
-      });
-
-      return {
-        devices,
-        summary,
-        telemetry: {
-          requestId,
-          durationMs: Math.round(performance.now() - startTime),
-          source: dataSource
-        }
-      };
-    }
-  } catch (err: any) {
-    lastError = err;
-    logDiagnostic({
-      requestId,
-      selectedUserId: cleanUserId,
-      endpoint: 'edge_function:get-user-devices',
-      errorCode: err.name || 'EXCEPTION',
-      errorMessage: err.message,
-      durationMs: Math.round(performance.now() - startTime),
-      environment
-    });
-  }
-
-  // 2. Secondary Strategy: Secure RPC function (SECURITY DEFINER)
+  // 1. Primary Strategy: Secure RPC function (SECURITY DEFINER with is_admin check)
   try {
     const { data: rpcData, error: rpcError } = await supabase.rpc('get_user_devices_for_admin', {
       target_user_id: cleanUserId
@@ -182,6 +94,21 @@ export const fetchUserDevices = async (userId: string): Promise<UserDevicesRespo
         durationMs: Math.round(performance.now() - startTime),
         environment
       });
+
+      // If unauthorized, do not attempt fallbacks
+      const msg = rpcError.message || '';
+      if (
+        rpcError.code === '42501' ||
+        msg.toLowerCase().includes('unauthorized') ||
+        msg.toLowerCase().includes('forbidden') ||
+        msg.toLowerCase().includes('privileges required')
+      ) {
+        throw new DeviceFetchError(
+          msg || 'Unauthorized: Administrator privileges required to view device history',
+          'permission_denied',
+          rpcError.code || '42501'
+        );
+      }
     } else if (Array.isArray(rpcData)) {
       rawList = rpcData;
       dataSource = 'rpc';
@@ -196,11 +123,81 @@ export const fetchUserDevices = async (userId: string): Promise<UserDevicesRespo
       });
     }
   } catch (err: any) {
+    if (err instanceof DeviceFetchError) {
+      throw err;
+    }
     lastError = err;
   }
 
-  // 3. Tertiary Strategy: Direct PostgREST query on public.user_devices
-  if (!rawList) {
+  // 2. Secondary Strategy: Server-side Edge Function 'get-user-devices'
+  if (rawList === null) {
+    try {
+      const { data: efData, error: efError } = await supabase.functions.invoke('get-user-devices', {
+        body: { userId: cleanUserId }
+      });
+
+      if (efError) {
+        lastError = efError;
+        logDiagnostic({
+          requestId,
+          selectedUserId: cleanUserId,
+          endpoint: 'edge_function:get-user-devices',
+          httpStatus: (efError as any)?.context?.status || 500,
+          errorCode: efError.name || 'EF_ERROR',
+          errorMessage: efError.message,
+          durationMs: Math.round(performance.now() - startTime),
+          environment
+        });
+
+        if (
+          (efError as any)?.context?.status === 401 ||
+          (efError as any)?.context?.status === 403 ||
+          efError.message?.toLowerCase().includes('forbidden') ||
+          efError.message?.toLowerCase().includes('unauthorized')
+        ) {
+          throw new DeviceFetchError(
+            'Unauthorized: Administrator privileges required to view device history',
+            'permission_denied',
+            '403'
+          );
+        }
+      } else if (efData && Array.isArray(efData.devices)) {
+        dataSource = 'edge_function';
+        const devices = efData.devices as UserDevice[];
+        const summary: UserDevicesSummary = efData.summary || {
+          total: devices.length,
+          active: devices.filter(d => d.is_active).length,
+          inactive: devices.filter(d => !d.is_active).length
+        };
+
+        logDiagnostic({
+          requestId,
+          selectedUserId: cleanUserId,
+          endpoint: 'edge_function:get-user-devices',
+          httpStatus: 200,
+          queryResultCount: devices.length,
+          durationMs: Math.round(performance.now() - startTime),
+          environment
+        });
+
+        return {
+          devices,
+          summary,
+          telemetry: {
+            requestId,
+            durationMs: Math.round(performance.now() - startTime),
+            source: dataSource
+          }
+        };
+      }
+    } catch (err: any) {
+      if (err instanceof DeviceFetchError) throw err;
+      lastError = err;
+    }
+  }
+
+  // 3. Tertiary Strategy: Direct sanitized PostgREST query on public.user_devices
+  if (rawList === null) {
     try {
       const { data: tableData, error: tableError } = await supabase
         .from('user_devices')
@@ -235,7 +232,15 @@ export const fetchUserDevices = async (userId: string): Promise<UserDevicesRespo
           durationMs: Math.round(performance.now() - startTime),
           environment
         });
-      } else if (tableData && tableData.length > 0) {
+
+        if (tableError.code === '42501') {
+          throw new DeviceFetchError(
+            'Unauthorized: Administrator privileges required to view device history',
+            'permission_denied',
+            '42501'
+          );
+        }
+      } else if (Array.isArray(tableData)) {
         rawList = tableData;
         dataSource = 'direct_table';
         logDiagnostic({
@@ -249,29 +254,42 @@ export const fetchUserDevices = async (userId: string): Promise<UserDevicesRespo
         });
       }
     } catch (err: any) {
+      if (err instanceof DeviceFetchError) throw err;
       lastError = err;
     }
   }
 
-  // 4. Baseline resolution for verified Supabase records if RLS prevented direct query
-  if ((!rawList || rawList.length === 0) && cleanUserId === ZORO_USER_ID) {
-    rawList = ZORO_BASELINE_DEVICES;
-    dataSource = 'baseline_fallback';
-    logDiagnostic({
-      requestId,
-      selectedUserId: cleanUserId,
-      endpoint: 'baseline_fallback',
-      httpStatus: 200,
-      queryResultCount: rawList.length,
-      durationMs: Math.round(performance.now() - startTime),
-      environment
-    });
-  }
-
-  // If no records found and an explicit error occurred, rethrow with clear error
-  if (!rawList && lastError) {
+  // If no strategy succeeded and an explicit error occurred, classify and throw
+  if (rawList === null && lastError) {
     const errorMsg = lastError.message || 'Failed to retrieve user devices from database';
-    throw new Error(errorMsg);
+    const code = lastError.code || (lastError as any)?.context?.status;
+    const isRpcNotFound = code === 'PGRST202' ||
+      errorMsg.includes('schema cache') ||
+      errorMsg.includes('get_user_devices_for_admin') ||
+      (errorMsg.toLowerCase().includes('function') && errorMsg.toLowerCase().includes('not found'));
+
+    if (isRpcNotFound) {
+      throw new DeviceFetchError(
+        errorMsg,
+        'rpc_not_found',
+        code || 'PGRST202'
+      );
+    }
+
+    const isUnauthorized = code === '42501' ||
+      errorMsg.toLowerCase().includes('unauthorized') ||
+      errorMsg.toLowerCase().includes('forbidden') ||
+      errorMsg.toLowerCase().includes('privileges required');
+
+    if (isUnauthorized) {
+      throw new DeviceFetchError(
+        errorMsg,
+        'permission_denied',
+        code || '42501'
+      );
+    }
+
+    throw new DeviceFetchError(errorMsg, 'general', code);
   }
 
   const rawDevices = rawList || [];
@@ -280,6 +298,7 @@ export const fetchUserDevices = async (userId: string): Promise<UserDevicesRespo
   const devices: UserDevice[] = rawDevices.map((d: any) => ({
     id: d.id,
     user_id: d.user_id,
+    device_identifier: d.device_identifier || undefined,
     platform: d.platform || 'Unknown',
     device_model: d.device_model || 'Unknown Device',
     os_version: d.os_version || 'Unknown',
@@ -292,8 +311,8 @@ export const fetchUserDevices = async (userId: string): Promise<UserDevicesRespo
     logged_out_at: d.logged_out_at || null,
     last_token_synced_at: d.last_token_synced_at || null,
     // Strictly derived boolean without exposing sensitive FCM token string
-    has_fcm_token: typeof d.has_fcm_token === 'boolean' 
-      ? d.has_fcm_token 
+    has_fcm_token: typeof d.has_fcm_token === 'boolean'
+      ? d.has_fcm_token
       : Boolean(d.fcm_token && String(d.fcm_token).trim().length > 0)
   }));
 
@@ -331,14 +350,16 @@ export interface FetchAllDevicesParams {
 
 export const fetchAllDevices = async ({ page, perPage, platform }: FetchAllDevicesParams) => {
   let query = supabase.from('user_devices').select('id, user_id, device_identifier, platform, device_model, os_version, app_version, build_number, last_active_at, is_active, created_at, updated_at, profiles(full_name, avatar_url, email)', { count: 'exact' });
-  
+
+
   if (platform && platform !== 'all') {
     query = query.ilike('platform', `%${platform}%`);
   }
 
   const from = (page - 1) * perPage;
   const to = from + perPage - 1;
-  
+
+
   query = query.range(from, to).order('last_active_at', { ascending: false, nullsFirst: false });
 
   const { data, count, error } = await query;

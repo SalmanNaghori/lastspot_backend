@@ -1,19 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  RefreshCw, 
-  ArrowLeft, 
-  ShieldAlert, 
-  CheckCircle, 
-  Smartphone, 
-  AlertTriangle, 
-  Clock, 
-  Calendar, 
-  UserX, 
-  Trash2, 
-  UserCheck, 
-  CheckCircle2, 
-  LogOut, 
-  Bell, 
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  UserX,
+  RefreshCw,
+  ArrowLeft,
+  ShieldAlert,
+  CheckCircle,
+  Smartphone,
+  AlertTriangle,
+  Clock,
+  Calendar,
+  CheckCircle2,
+  LogOut,
+  Bell,
   BellOff,
   Mail,
   Phone,
@@ -22,14 +20,71 @@ import {
   Star,
   FileText,
   Copy,
-  Check
+  Check,
+  Database
 } from 'lucide-react';
 import { adminRepo } from '@/lib/adminRepo';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertDialog } from '@/components/common/AlertDialog';
 import { useToast } from '@/app/providers/ToastProvider';
+import { useAuth } from '@/app/providers/AuthProvider';
 import { AdminStatusBadge, AdminErrorState, AdminLoadingSkeleton } from '@/components/brand';
-import type { UserDevice, UserDevicesResponse } from '@/features/devices/api/devices';
+import { AppStrings } from '@/core/constants/app_strings';
+import { ModerationDialog } from '@/features/users/components/ModerationDialog';
+import type { ModerationValues } from '@/features/users/components/ModerationDialog';
+import type { ModerationAction, ModerationCapabilities } from '@/features/users/types/moderation';
+import { type UserDevice, type UserDevicesResponse, DeviceFetchError } from '@/features/devices/api/devices';
+
+interface DeviceErrorInfo {
+  type: 'permission_denied' | 'rpc_not_found' | 'general';
+  message: string;
+  code?: string;
+}
+
+const parseDeviceError = (err: any): DeviceErrorInfo => {
+  if (err instanceof DeviceFetchError) {
+    return {
+      type: err.category,
+      message: err.message,
+      code: err.code
+    };
+  }
+  const msg = err?.message || String(err) || 'Failed to retrieve connected devices';
+  const code = err?.code || (err as any)?.context?.status;
+
+  if (
+    code === '42501' ||
+    code === 401 ||
+    code === 403 ||
+    msg.toLowerCase().includes('unauthorized') ||
+    msg.toLowerCase().includes('forbidden') ||
+    msg.toLowerCase().includes('privileges required')
+  ) {
+    return {
+      type: 'permission_denied',
+      message: 'Administrator or Super Admin privileges are required to view connected device telemetry.',
+      code: code ? String(code) : '42501'
+    };
+  }
+
+  if (
+    code === 'PGRST202' ||
+    msg.includes('schema cache') ||
+    msg.includes('get_user_devices_for_admin') ||
+    (msg.toLowerCase().includes('function') && msg.toLowerCase().includes('not found'))
+  ) {
+    return {
+      type: 'rpc_not_found',
+      message: 'Could not find the function public.get_user_devices_for_admin(target_user_id) in the schema cache.',
+      code: code ? String(code) : 'PGRST202'
+    };
+  }
+
+  return {
+    type: 'general',
+    message: msg,
+    code: code ? String(code) : undefined
+  };
+};
 
 /**
  * Format timestamp with accurate, consistent localized date & time representation
@@ -53,6 +108,8 @@ export function UserDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user: actingUser } = useAuth();
+  const activeUserId = useRef<string | null>(id || null);
 
   // User Profile state
   const [user, setUser] = useState<any>(null);
@@ -62,20 +119,37 @@ export function UserDetailsPage() {
   // Dedicated Connected Devices state
   const [devicesData, setDevicesData] = useState<UserDevicesResponse | null>(null);
   const [devicesLoading, setDevicesLoading] = useState(true);
-  const [devicesError, setDevicesError] = useState<string | null>(null);
+  const [devicesError, setDevicesError] = useState<DeviceErrorInfo | null>(null);
 
   // Copy feedback state
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const [confirmDialog, setConfirmDialog] = useState<{ 
-    isOpen: boolean; 
-    type: 'softDelete' | 'reactivate' | null; 
-    user: any; 
-  }>({
-    isOpen: false,
-    type: null,
-    user: null,
-  });
+  const [moderationAction, setModerationAction] = useState<ModerationAction | null>(null);
+  const [moderationAccess, setModerationAccess] = useState<{
+    actorId: string;
+    capabilities: ModerationCapabilities | null;
+    error: string | null;
+  } | null>(null);
+  const [refreshWarning, setRefreshWarning] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!actingUser?.id) return;
+    let ignore = false;
+    const actorId = actingUser.id;
+    adminRepo.getModerationCapabilities().then((capabilities) => {
+      if (!ignore) setModerationAccess({ actorId, capabilities, error: null });
+    }).catch((failure: unknown) => {
+      if (ignore) return;
+      const backendMessage = failure && typeof failure === 'object' && 'message' in failure
+        && typeof failure.message === 'string' ? failure.message : null;
+      setModerationAccess({
+        actorId,
+        capabilities: null,
+        error: backendMessage || AppStrings.Users.moderation.permissionError,
+      });
+    });
+    return () => { ignore = true; };
+  }, [actingUser?.id]);
 
   const copyToClipboard = (text: string, fieldName: string) => {
     if (!text) return;
@@ -112,7 +186,7 @@ export function UserDetailsPage() {
       setDevicesData(result);
     } catch (err: any) {
       console.error('Error fetching user devices:', err);
-      setDevicesError(err.message || 'Failed to retrieve connected devices');
+      setDevicesError(parseDeviceError(err));
       setDevicesData(null);
     } finally {
       setDevicesLoading(false);
@@ -123,6 +197,7 @@ export function UserDetailsPage() {
   useEffect(() => {
     if (!id) return;
     let ignore = false;
+    activeUserId.current = id;
 
     Promise.allSettled([
       adminRepo.getUserById(id),
@@ -149,7 +224,7 @@ export function UserDetailsPage() {
         setDevicesData(devicesResult.value);
         setDevicesError(null);
       } else {
-        setDevicesError(devicesResult.reason?.message || 'Failed to retrieve connected devices');
+        setDevicesError(parseDeviceError(devicesResult.reason));
         setDevicesData(null);
       }
       setDevicesLoading(false);
@@ -157,56 +232,43 @@ export function UserDetailsPage() {
 
     return () => {
       ignore = true;
+      activeUserId.current = null;
     };
   }, [id]);
 
-  const handleActivate = async () => {
-    if (!window.confirm("Are you sure you want to activate this user?")) return;
-    await adminRepo.activateUser(id as string);
-    showToast('User status updated to Active.', 'success');
-    loadUser();
-    loadDevices();
-  };
+  const handleModeration = async (values: ModerationValues) => {
+    if (!moderationAction || !user) throw new Error(AppStrings.Users.moderation.failed);
+    const targetId = user.id;
+    const action = moderationAction;
+    const updated = await adminRepo.moderateUser({
+      targetUserId: targetId,
+      action,
+      ...values,
+      expectedStatus: user.status,
+      expectedDeletedAt: user.deleted_at || null,
+    });
+    if (activeUserId.current !== targetId) return;
+    setUser((previous: any) => previous?.id === targetId ? { ...previous, ...updated } : previous);
+    setRefreshWarning(null);
+    showToast(AppStrings.Users.moderation.actions[action].success, 'success');
 
-  const handleBan = async () => {
-    const reason = window.prompt("Enter ban reason:");
-    if (reason === null) return;
-    await adminRepo.banUser(id as string, { reason: reason || 'Violated Terms', message: 'Account permanently banned.' });
-    showToast('User account permanently banned.', 'error');
-    loadUser();
-    loadDevices();
-  };
-
-  const handleSuspend = async () => {
-    const reason = window.prompt("Enter suspension reason:");
-    if (reason === null) return;
-    await adminRepo.suspendUser(id as string, { reason: reason || 'Suspended pending review', message: 'Account temporarily suspended.' });
-    showToast('User account temporarily suspended.', 'warning');
-    loadUser();
-    loadDevices();
-  };
-
-  const handleConfirmAction = async () => {
-    if (!confirmDialog.user || !confirmDialog.type) return;
-    
-    if (confirmDialog.type === 'softDelete') {
-      await adminRepo.softDeleteUser(confirmDialog.user.id);
-      showToast(`User ${confirmDialog.user.full_name || 'Anonymous'} soft-deleted. Account marked with deleted_at timestamp.`, 'info');
-    } else if (confirmDialog.type === 'reactivate') {
-      await adminRepo.reactivateUser(confirmDialog.user.id);
-      showToast(`User ${confirmDialog.user.full_name || 'Anonymous'} reactivated (deleted_at reset to NULL).`, 'success');
+    // The RPC has committed. A failed enrichment refresh must not turn this
+    // successful moderation into a retry that could apply the action twice.
+    try {
+      const refreshed = await adminRepo.getUserById(targetId);
+      if (activeUserId.current !== targetId) return;
+      if (!refreshed) throw new Error(AppStrings.Users.moderation.refreshWarning);
+      setUser((previous: any) => previous?.id === targetId ? { ...previous, ...refreshed } : previous);
+    } catch {
+      if (activeUserId.current === targetId) setRefreshWarning(AppStrings.Users.moderation.refreshWarning);
     }
-    
-    setConfirmDialog({ isOpen: false, type: null, user: null });
-    loadUser();
-    loadDevices();
   };
 
   if (loading) {
     return (
       <div className="space-y-6 max-w-6xl mx-auto pb-12">
-        <button 
-          onClick={() => navigate(-1)} 
+        <button
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-xs font-bold text-[var(--kb-muted)] hover:text-[#F46A35] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Users
@@ -219,8 +281,8 @@ export function UserDetailsPage() {
   if (error || !user) {
     return (
       <div className="space-y-6 max-w-6xl mx-auto pb-12">
-        <button 
-          onClick={() => navigate('/users')} 
+        <button
+          onClick={() => navigate('/users')}
           className="flex items-center gap-2 text-xs font-bold text-[var(--kb-muted)] hover:text-[#F46A35] transition-colors"
         >
           <ArrowLeft className="w-4 h-4" /> Back to Users
@@ -244,8 +306,8 @@ export function UserDetailsPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-12">
       {/* Back button */}
-      <button 
-        onClick={() => navigate(-1)} 
+      <button
+        onClick={() => navigate(-1)}
         className="inline-flex items-center gap-2 text-xs font-bold text-[var(--kb-muted)] hover:text-[#F46A35] transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
@@ -271,7 +333,7 @@ export function UserDetailsPage() {
                 <AdminStatusBadge status={user.role} size="sm" />
               )}
             </div>
-            
+
             <p className="text-xs sm:text-sm text-[var(--kb-muted)] flex flex-wrap items-center gap-3">
               <span className="inline-flex items-center gap-1.5 font-mono">
                 <Mail className="w-3.5 h-3.5 text-[var(--kb-muted)]" />
@@ -314,36 +376,38 @@ export function UserDetailsPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 shrink-0">
-          {user.status !== 'active' && (
+          {moderationAccess?.capabilities?.canReactivate && (user.status !== 'active' || user.deleted_at) && (
             <button
-              onClick={handleActivate}
+              onClick={() => setModerationAction(user.deleted_at ? 'restore' : 'reactivate')}
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 transition-colors text-white rounded-xl text-xs font-bold shadow-sm"
             >
-              Activate
+              {user.deleted_at ? 'Restore Account' : 'Activate'}
             </button>
           )}
-          {user.status !== 'suspended' && (
+          {moderationAccess?.capabilities?.canSuspend && user.status !== 'suspended' && (
             <button
-              onClick={handleSuspend}
+              onClick={() => setModerationAction('suspend')}
               className="px-4 py-2 bg-amber-500 hover:bg-amber-600 transition-colors text-white rounded-xl text-xs font-bold shadow-sm"
             >
               Suspend
             </button>
           )}
-          {user.status !== 'banned' && (
+          {moderationAccess?.capabilities?.canBan && user.status !== 'banned' && (
             <button
-              onClick={handleBan}
+              onClick={() => setModerationAction('ban')}
               className="px-4 py-2 bg-rose-600 hover:bg-rose-700 transition-colors text-white rounded-xl text-xs font-bold shadow-sm"
             >
               Ban User
             </button>
           )}
-          <button 
-            onClick={() => setConfirmDialog({ isOpen: true, type: user.deleted_at ? 'reactivate' : 'softDelete', user: user })} 
-            className="px-4 py-2 bg-[var(--kb-surface-subtle)] hover:bg-[var(--kb-border)] text-[var(--kb-text)] border border-[var(--kb-border)] rounded-xl text-xs font-bold transition-colors shadow-sm"
-          >
-            {user.deleted_at ? 'Restore Account' : 'Soft Delete'}
-          </button>
+          {moderationAccess?.capabilities?.canSoftDelete && !user.deleted_at && (
+            <button
+              onClick={() => setModerationAction('soft_delete')}
+              className="px-4 py-2 bg-[var(--kb-surface-subtle)] hover:bg-[var(--kb-border)] text-[var(--kb-text)] border border-[var(--kb-border)] rounded-xl text-xs font-bold transition-colors shadow-sm"
+            >
+              Soft Delete
+            </button>
+          )}
         </div>
       </div>
 
@@ -358,8 +422,8 @@ export function UserDetailsPage() {
           <div className="bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] p-4 rounded-2xl">
             <p className="text-[10px] font-bold text-[var(--kb-muted)] uppercase tracking-wider mb-1 flex items-center justify-between">
               <span>User UUID</span>
-              <button 
-                onClick={() => copyToClipboard(user.id, 'User ID')} 
+              <button
+                onClick={() => copyToClipboard(user.id, 'User ID')}
                 className="text-[var(--kb-muted)] hover:text-[#F46A35] transition-colors"
                 title="Copy User ID"
               >
@@ -374,8 +438,8 @@ export function UserDetailsPage() {
             <p className="text-[10px] font-bold text-[var(--kb-muted)] uppercase tracking-wider mb-1 flex items-center justify-between">
               <span>Email Address</span>
               {user.email && (
-                <button 
-                  onClick={() => copyToClipboard(user.email, 'Email')} 
+                <button
+                  onClick={() => copyToClipboard(user.email, 'Email')}
                   className="text-[var(--kb-muted)] hover:text-[#F46A35] transition-colors"
                   title="Copy Email"
                 >
@@ -393,8 +457,8 @@ export function UserDetailsPage() {
             <p className="text-[10px] font-bold text-[var(--kb-muted)] uppercase tracking-wider mb-1 flex items-center justify-between">
               <span>Phone Number</span>
               {user.phone && (
-                <button 
-                  onClick={() => copyToClipboard(user.phone, 'Phone')} 
+                <button
+                  onClick={() => copyToClipboard(user.phone, 'Phone')}
                   className="text-[var(--kb-muted)] hover:text-[#F46A35] transition-colors"
                   title="Copy Phone"
                 >
@@ -466,7 +530,7 @@ export function UserDetailsPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* LEFT COLUMN: LIFECYCLE & MODERATION */}
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-[var(--kb-surface)] border border-[var(--kb-border)] rounded-3xl p-6 shadow-sm">
@@ -523,7 +587,7 @@ export function UserDetailsPage() {
         {/* RIGHT COLUMN: CONNECTED DEVICES */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-[var(--kb-surface)] border border-[var(--kb-border)] rounded-3xl overflow-hidden shadow-sm">
-            
+
             {/* Devices Card Header with Summary Counters */}
             <div className="p-6 border-b border-[var(--kb-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -560,15 +624,51 @@ export function UserDetailsPage() {
               <div className="p-6 space-y-4">
                 <AdminLoadingSkeleton variant="list" rows={2} />
               </div>
+            ) : devicesError?.type === 'permission_denied' ? (
+              /* State 1: Permission Denied */
+              <div className="p-8 text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shadow-sm">
+                  <ShieldAlert className="w-6 h-6" />
+                </div>
+                <div className="max-w-md">
+                  <h4 className="text-sm font-bold text-[var(--kb-text)]">Administrator Access Restricted</h4>
+                  <p className="text-xs text-[var(--kb-muted)] mt-1">{devicesError.message}</p>
+                  {devicesError.code && (
+                    <span className="inline-block mt-2 px-2.5 py-0.5 rounded text-[10px] font-mono bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] text-[var(--kb-muted)]">
+                      Code: {devicesError.code}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : devicesError?.type === 'rpc_not_found' ? (
+              /* State 2: RPC Missing / Schema Cache */
+              <div className="p-8 text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-sm">
+                  <Database className="w-6 h-6" />
+                </div>
+                <div className="max-w-md">
+                  <h4 className="text-sm font-bold text-[var(--kb-text)]">Database Function Not Deployed</h4>
+                  <p className="text-xs text-rose-500 dark:text-rose-400 mt-1 break-words">{devicesError.message}</p>
+                  <p className="text-[11px] text-[var(--kb-muted)] mt-2">
+                    Execute the migration <code className="px-1.5 py-0.5 rounded bg-[var(--kb-surface-subtle)] border border-[var(--kb-border)] font-mono text-[10px]">20261104000000_fix_connected_devices_rpc.sql</code> in the Supabase Cloud SQL Editor, then retry.
+                  </p>
+                </div>
+                <button
+                  onClick={() => loadDevices()}
+                  className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-[var(--kb-surface-subtle)] hover:bg-[var(--kb-border)] text-[var(--kb-text)] text-xs font-bold rounded-xl border border-[var(--kb-border)] transition-colors shadow-xs"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Re-check Schema Cache
+                </button>
+              </div>
             ) : devicesError ? (
-              /* API Failure State with Retry button — never show 0 devices simply due to error */
+              /* State 3: General API Failure State with Retry button */
               <div className="p-8 text-center flex flex-col items-center justify-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-500 shadow-sm">
                   <AlertTriangle className="w-6 h-6" />
                 </div>
                 <div className="max-w-md">
                   <h4 className="text-sm font-bold text-[var(--kb-text)]">Unable to load connected devices</h4>
-                  <p className="text-xs text-rose-500 mt-1 break-words">{devicesError}</p>
+                  <p className="text-xs text-rose-500 mt-1 break-words">{devicesError.message}</p>
                 </div>
                 <button
                   onClick={() => loadDevices()}
@@ -591,7 +691,7 @@ export function UserDetailsPage() {
               <div className="divide-y divide-[var(--kb-border)]/60">
                 {devicesData.devices.map((d: UserDevice) => (
                   <div key={d.id} className="p-6 hover:bg-[var(--kb-surface-subtle)]/40 transition-colors">
-                    
+
                     {/* Top Row: Device Model, Platform Badge, and Status Badges */}
                     <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                       <div>
@@ -603,7 +703,7 @@ export function UserDetailsPage() {
                             {d.platform || 'Unknown'}
                           </span>
                         </div>
-                        
+
                         {/* Status Tags */}
                         <div className="flex flex-wrap items-center gap-2 mt-2.5">
                           {d.is_active ? (
@@ -630,11 +730,11 @@ export function UserDetailsPage() {
 
                       {/* Last Active Timestamp Indicator */}
                       <div className="flex items-center gap-1.5 text-xs font-semibold text-[#F46A35] bg-[#F46A35]/10 px-3 py-1.5 rounded-xl border border-[#F46A35]/20 shrink-0">
-                        <Clock className="w-3.5 h-3.5" /> 
+                        <Clock className="w-3.5 h-3.5" />
                         <span className="text-[11px] font-mono">{formatDateTime(d.last_active_at)}</span>
                       </div>
                     </div>
-                    
+
                     {/* Device Details Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-5 pt-4 border-t border-[var(--kb-border)]/60 text-xs">
                       <div>
@@ -654,7 +754,7 @@ export function UserDetailsPage() {
                           {d.is_active ? 'Token Synced' : 'Logged Out At'}
                         </p>
                         <p className="text-[var(--kb-text)] text-[11px]">
-                          {d.is_active 
+                          {d.is_active
                             ? (d.last_token_synced_at ? formatDateTime(d.last_token_synced_at) : 'N/A')
                             : (d.logged_out_at ? formatDateTime(d.logged_out_at) : 'N/A')}
                         </p>
@@ -670,24 +770,15 @@ export function UserDetailsPage() {
 
       </div>
 
-      <AlertDialog
-        isOpen={confirmDialog.isOpen}
-        onClose={() => setConfirmDialog({ isOpen: false, type: null, user: null })}
-        onConfirm={handleConfirmAction}
-        title={
-          confirmDialog.type === 'softDelete'
-            ? `Soft Delete ${confirmDialog.user?.full_name}?`
-            : `Reactivate ${confirmDialog.user?.full_name}?`
-        }
-        description={
-          confirmDialog.type === 'softDelete'
-            ? 'This will set the deleted_at timestamp. The user will be hidden from public app feeds, but the row will remain in the database.'
-            : 'This will clear the deleted_at timestamp (deleted_at = NULL). Any existing suspension or ban status will remain active.'
-        }
-        confirmText={confirmDialog.type === 'softDelete' ? 'Soft Delete User' : 'Restore Account'}
-        variant={confirmDialog.type === 'softDelete' ? 'danger' : 'success'}
-        icon={confirmDialog.type === 'softDelete' ? Trash2 : UserCheck}
-      />
+      {moderationAction && (
+        <ModerationDialog
+          action={moderationAction}
+          userName={user.full_name || user.email || 'User'}
+          supportsExpiry={moderationAction === 'suspend'}
+          onClose={() => setModerationAction(null)}
+          onConfirm={handleModeration}
+        />
+      )}
     </div>
   );
 }

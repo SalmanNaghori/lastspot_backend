@@ -274,6 +274,62 @@ export const AppStrings = {
     alerts: {
       activated: 'User status updated to Active.',
       banned: 'User account permanently banned.'
+    },
+    moderation: {
+      checkingPermission: 'Checking moderation access…',
+      noPermission: 'Your account does not have permission to moderate users.',
+      permissionError: 'Moderation access could not be verified. Reload this page to try again.',
+      selfProtected: 'You cannot moderate your own account.',
+      staffProtected: 'Staff accounts are protected from these moderation actions.',
+      unknownStatus: 'This account has an unrecognized status. Reload its details before taking action.',
+      userFallback: 'this user',
+      reasonLabel: 'Reason',
+      reasonPlaceholder: 'Explain why this action is needed',
+      reasonHelp: 'Required for the moderation audit. Maximum 1,000 characters.',
+      reasonError: 'Enter a reason between 1 and 1,000 characters.',
+      messageLabel: 'Message to the user (optional)',
+      messagePlaceholder: 'Explain the restriction and any next steps',
+      messageHelp: 'Keep private investigation details out of this message.',
+      messageError: 'The user message must be 2,000 characters or fewer.',
+      expiryLabel: 'Suspension expiry (optional)',
+      expiryHelp: 'Use your local date and time. Leave empty to suspend until an administrator reactivates the account.',
+      expiryUnavailable: 'Scheduled suspensions are not enabled. Reactivation requires an administrator.',
+      expiryError: 'Choose a valid expiry date and time in the future.',
+      pending: 'Applying action…',
+      failed: 'The moderation action could not be completed. Please try again.',
+      refreshWarning: 'The action succeeded, but the latest user details could not be refreshed. Reload to verify the current state.',
+      actions: {
+        suspend: {
+          label: 'Suspend',
+          title: 'Suspend account',
+          description: 'Temporarily restrict normal account access. Enter the reason and, if appropriate, an expiry.',
+          success: 'The account has been suspended.'
+        },
+        ban: {
+          label: 'Ban User',
+          title: 'Ban account',
+          description: 'Restrict normal account access until an authorized administrator reactivates the account.',
+          success: 'The account has been banned.'
+        },
+        soft_delete: {
+          label: 'Soft Delete',
+          title: 'Soft-delete account',
+          description: 'The user will lose normal account access. Account records are retained, and any existing ban or suspension remains in place.',
+          success: 'The account has been soft-deleted.'
+        },
+        reactivate: {
+          label: 'Reactivate',
+          title: 'Reactivate account',
+          description: 'Remove the current ban or suspension and restore normal account access. Explain why the restriction is being lifted.',
+          success: 'The account has been reactivated.'
+        },
+        restore: {
+          label: 'Restore Account',
+          title: 'Restore account',
+          description: 'Restore this soft-deleted account. Any existing ban or suspension will still restrict access until separately lifted.',
+          success: 'The account has been restored. Any existing ban or suspension remains in place.'
+        }
+      }
     }
   },
   Devices: {

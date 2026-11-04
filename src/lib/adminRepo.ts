@@ -1,6 +1,7 @@
 import { supabase } from '@/core/supabase/client'
 import { ApiUrls } from '@/core/constants/api_urls'
-import { fetchUserDevices, ZORO_BASELINE_DEVICES, ZORO_USER_ID } from '@/features/devices/api/devices'
+import { fetchUserDevices } from '@/features/devices/api/devices'
+import type { ModerationCapabilities, ModerationParams, ModerationResult } from '@/features/users/types/moderation'
 import { generateRequestId, logDiagnostic } from '@/core/utils/diagnosticLogger'
 
 class ComprehensiveAdminRepository {
@@ -25,9 +26,9 @@ class ComprehensiveAdminRepository {
         { count: webDevices }
       ] = await Promise.all([
         supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }),
-        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).eq('status', 'suspended'),
-        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).eq('status', 'banned'),
+        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).eq('status', 'active').is('deleted_at', null),
+        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).eq('status', 'suspended').is('deleted_at', null),
+        supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).eq('status', 'banned').is('deleted_at', null),
         supabase.from(ApiUrls.tables.profiles).select('*', { count: 'exact', head: true }).not('deleted_at', 'is', null),
         supabase.from(ApiUrls.tables.requests).select('*', { count: 'exact', head: true }),
         supabase.from(ApiUrls.tables.requests).select('*', { count: 'exact', head: true }).eq('status', 'open'),
@@ -60,10 +61,10 @@ class ComprehensiveAdminRepository {
           open: openReports || 0
         },
         devices: {
-          total: totalDevices || ZORO_BASELINE_DEVICES.length,
-          android: androidDevices || ZORO_BASELINE_DEVICES.filter(d => d.platform.toLowerCase() === 'android').length,
-          ios: iosDevices || ZORO_BASELINE_DEVICES.filter(d => d.platform.toLowerCase() === 'ios').length,
-          web: webDevices || ZORO_BASELINE_DEVICES.filter(d => d.platform.toLowerCase() === 'web').length
+          total: totalDevices ?? 0,
+          android: androidDevices ?? 0,
+          ios: iosDevices ?? 0,
+          web: webDevices ?? 0
         },
         notifications: {
           sent: 0
@@ -143,21 +144,8 @@ class ComprehensiveAdminRepository {
 
       const devicesList = data || [];
 
-      // Fallback to baseline devices if remote table returns 0 or errors out
-      if (devicesList.length === 0 && ZORO_BASELINE_DEVICES.length > 0) {
-        return ZORO_BASELINE_DEVICES.slice(0, limit).map((d) => ({
-          ...d,
-          device_identifier: d.device_identifier || d.id,
-          profiles: {
-            full_name: 'zoro',
-            email: 'zoro@yopmail.com'
-          }
-        })) as any[];
-      }
-
       if (devicesList.length === 0) return [];
 
-      // Fetch profiles separately (no direct foreign key in schema cache)
       const userIds = [...new Set(devicesList.map((d: any) => d.user_id))].filter(Boolean);
       let profilesMap: Record<string, any> = {};
 
@@ -177,18 +165,11 @@ class ComprehensiveAdminRepository {
 
       return devicesList.map((d: any) => ({
         ...d,
-        profiles: profilesMap[d.user_id] || (d.user_id === ZORO_USER_ID ? { full_name: 'zoro', email: 'zoro@yopmail.com' } : null)
+        profiles: profilesMap[d.user_id] || null
       }));
     } catch (error) {
       console.error('Error in getRecentDevices:', error);
-      return ZORO_BASELINE_DEVICES.slice(0, limit).map((d) => ({
-        ...d,
-        device_identifier: d.device_identifier || d.id,
-        profiles: {
-          full_name: 'zoro',
-          email: 'zoro@yopmail.com'
-        }
-      })) as any[];
+      return [];
     }
   }
 
@@ -477,65 +458,110 @@ class ComprehensiveAdminRepository {
     return await fetchUserDevices(id);
   }
 
-  async activateUser(id: string) {
+    async getModerationCapabilities(): Promise<ModerationCapabilities> {
     try {
-      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ 
-        status: 'active', status_reason: null, status_message: null, status_expires_at: null 
-      }).eq('id', id);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        return {
+          canSuspend: false,
+          canBan: false,
+          canSoftDelete: false,
+          canReactivate: false,
+          canRestore: false,
+          isSuperAdmin: false,
+        };
+      }
+
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id);
+
       if (error) throw error;
-      return await this.getUserById(id);
+      const roles = (data || []).map((r: any) => r.role);
+      const isSuperAdmin = roles.includes('super_admin');
+      const isAdmin = isSuperAdmin || roles.includes('admin') || roles.includes('moderator');
+
+      return {
+        canSuspend: isAdmin,
+        canBan: isAdmin,
+        canSoftDelete: isAdmin,
+        canReactivate: isAdmin,
+        canRestore: isAdmin,
+        isSuperAdmin,
+      };
+    } catch (err) {
+      console.error('Error fetching moderation capabilities:', err);
+      return {
+        canSuspend: false,
+        canBan: false,
+        canSoftDelete: false,
+        canReactivate: false,
+        canRestore: false,
+        isSuperAdmin: false,
+      };
+    }
+  }
+
+  async moderateUser(params: ModerationParams): Promise<ModerationResult> {
+    try {
+      const { data, error } = await supabase.rpc('admin_moderate_user', {
+        p_target_user_id: params.targetUserId,
+        p_action: params.action,
+        p_reason: params.reason,
+        p_message: params.message || null,
+        p_expires_at: params.expiresAt || null,
+      });
+
+      if (error) throw error;
+      return data as ModerationResult;
     } catch (error) {
-      console.error('Error in activateUser:', error);
+      console.error(`Error in moderateUser (${params.action}):`, error);
       throw error;
     }
+  }
+
+  async activateUser(id: string) {
+    return this.moderateUser({
+      targetUserId: id,
+      action: 'reactivate',
+      reason: 'Admin activated account',
+    });
   }
 
   async suspendUser(id: string, { reason, message, expiresAt }: any) {
-    try {
-      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ 
-        status: 'suspended', status_reason: reason, status_message: message, status_expires_at: expiresAt || null 
-      }).eq('id', id);
-      if (error) throw error;
-      return await this.getUserById(id);
-    } catch (error) {
-      console.error('Error in suspendUser:', error);
-      throw error;
-    }
+    return this.moderateUser({
+      targetUserId: id,
+      action: 'suspend',
+      reason: reason || 'Suspended by admin',
+      message: message || null,
+      expiresAt: expiresAt || null,
+    });
   }
 
   async banUser(id: string, { reason, message }: any) {
-    try {
-      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ 
-        status: 'banned', status_reason: reason, status_message: message 
-      }).eq('id', id);
-      if (error) throw error;
-      return await this.getUserById(id);
-    } catch (error) {
-      console.error('Error in banUser:', error);
-      throw error;
-    }
+    return this.moderateUser({
+      targetUserId: id,
+      action: 'ban',
+      reason: reason || 'Banned by admin',
+      message: message || null,
+    });
   }
 
   async softDeleteUser(id: string) {
-    try {
-      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ deleted_at: new Date().toISOString() }).eq('id', id);
-      if (error) throw error;
-      return await this.getUserById(id);
-    } catch (error) {
-      console.error('Error in softDeleteUser:', error);
-      throw error;
-    }
+    return this.moderateUser({
+      targetUserId: id,
+      action: 'soft_delete',
+      reason: 'Account soft-deleted by admin',
+    });
   }
 
   async reactivateUser(id: string) {
-    try {
-      const { error } = await supabase.from(ApiUrls.tables.profiles).update({ deleted_at: null }).eq('id', id);
-      if (error) throw error;
-      return await this.getUserById(id);
-    } catch (error) {
-      console.error('Error in reactivateUser:', error);
-      throw error;
-    }
+    return this.moderateUser({
+      targetUserId: id,
+      action: 'restore',
+      reason: 'Account restored by admin',
+    });
   }
 
   // CATEGORIES
@@ -873,23 +899,6 @@ class ComprehensiveAdminRepository {
 
       let devices = rawDevices || [];
 
-      // Fallback to verified baseline device records if remote table returns 0 (e.g. RLS restrictions)
-      if (devices.length === 0 && ZORO_BASELINE_DEVICES.length > 0) {
-        devices = ZORO_BASELINE_DEVICES.map(d => ({
-          id: d.id,
-          user_id: d.user_id,
-          device_identifier: d.device_identifier || d.id,
-          platform: d.platform,
-          device_model: d.device_model,
-          os_version: d.os_version,
-          app_version: d.app_version,
-          build_number: d.build_number,
-          last_active_at: d.last_active_at,
-          is_active: d.is_active,
-          created_at: d.created_at
-        }));
-      }
-
       if (devices.length === 0) {
         return { devices: [], total: 0, totalPages: 1 };
       }
@@ -913,9 +922,9 @@ class ComprehensiveAdminRepository {
 
       let formattedData = devices.map((d: any) => ({
         ...d,
-        user_name: profilesMap[d.user_id]?.full_name || (d.user_id === ZORO_USER_ID ? 'zoro' : 'Unknown'),
+        user_name: profilesMap[d.user_id]?.full_name || 'Unknown',
         user_avatar: profilesMap[d.user_id]?.avatar_url || '',
-        user_email: profilesMap[d.user_id]?.email || profilesMap[d.user_id]?.phone || (d.user_id === ZORO_USER_ID ? 'zoro@yopmail.com' : '')
+        user_email: profilesMap[d.user_id]?.email || profilesMap[d.user_id]?.phone || ''
       }));
 
       if (platformFilter !== 'all') {
@@ -948,30 +957,7 @@ class ComprehensiveAdminRepository {
       };
     } catch (error) {
       console.error('Error in getDevices:', error);
-      let fallbackData = ZORO_BASELINE_DEVICES.map(d => ({
-        ...d,
-        user_name: 'zoro',
-        user_avatar: '',
-        user_email: 'zoro@yopmail.com'
-      }));
-
-      if (platformFilter !== 'all') {
-        fallbackData = fallbackData.filter((d: any) => 
-          d.platform && d.platform.toLowerCase() === platformFilter.toLowerCase()
-        );
-      }
-
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        fallbackData = fallbackData.filter((d: any) => 
-          (d.device_model && d.device_model.toLowerCase().includes(q)) || 
-          (d.user_name && d.user_name.toLowerCase().includes(q)) ||
-          (d.user_email && d.user_email.toLowerCase().includes(q)) ||
-          (d.platform && d.platform.toLowerCase().includes(q))
-        );
-      }
-
-      return { devices: fallbackData, total: fallbackData.length, totalPages: 1 };
+      return { devices: [], total: 0, totalPages: 1 };
     }
   }
   // CITIES
